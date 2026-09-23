@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Location Gear</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <span class="logo-icon">🌍</span>
+      <h1>Location Gear</h1>
+    </div>
+    <div class="toggle-container">
+      <label class="switch" title="Toggle Location Spoofing">
+        <input type="checkbox" id="spoof-toggle" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="active-card">
+    <div class="active-badge">Active Region</div>
+    <div class="active-content">
+      <span class="active-flag" id="active-flag">🇺🇸</span>
+      <div class="active-info">
+        <h2 id="active-name">United States (US)</h2>
+        <p id="active-coords">37.0902° N, 95.7129° W</p>
+      </div>
+      <span class="tier-pill t1" id="active-tier">Tier 1</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn primary-btn" id="open-google-btn">
+      <span>🚀 Open Google with this Region</span>
+    </button>
+  </div>
+
+  <div class="search-section">
+    <input type="text" id="popup-search" placeholder="🔍 Search country, code, or city..." autocomplete="off">
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn active" data-tier="all">All (196)</button>
+    <button type="button" class="tab-btn" data-tier="1">Tier 1 (24)</button>
+    <button type="button" class="tab-btn" data-tier="2">Tier 2 (36)</button>
+    <button type="button" class="tab-btn" data-tier="3">Tier 3 (136)</button>
+  </div>
+
+  <div class="list-container">
+    <ul id="popup-country-list">
+      <!-- Injected via popup.js -->
+    </ul>
+  </div>
+
+  <div class="footer">
+    <span>Works 100% on SERP & Google Maps</span>
+    <span>v1.0.0</span>
+  </div>
+
+  <script src="../data/countries.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

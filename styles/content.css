@@ -1,0 +1,477 @@
+/**
+ * Location Gear - Matching Extension Popup UI/UX Styling
+ * Transformed from dark/black background to the clean, crisp white and Google-blue
+ * aesthetic matching the extension's toolbar popup.
+ */
+
+/* Wrapper anchored directly under the search box */
+#location-gear-wrapper {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 28px;
+  display: inline-flex;
+  align-items: center;
+  z-index: 99999;
+  line-height: 1;
+}
+
+/* Compact Badge Below Camera */
+#location-gear-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 25px;
+  padding: 2px 8px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3c4043;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.15);
+  outline: none;
+  white-space: nowrap;
+}
+
+#location-gear-badge:hover {
+  background: #f8f9fa;
+  border-color: #bdc1c6;
+  color: #202124;
+}
+
+#location-gear-badge.open {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+  color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.lg-badge-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lg-badge-code {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: inherit;
+}
+
+.lg-badge-arrow {
+  font-size: 9px;
+  margin-left: 1px;
+  transition: transform 0.15s ease;
+  opacity: 0.75;
+}
+
+#location-gear-badge.open .lg-badge-arrow {
+  transform: rotate(180deg);
+}
+
+/* ========================================================
+   Dropdown Menu Modal (Matches Extension Popup UI/UX)
+   ======================================================== */
+#location-gear-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  width: 380px;
+  max-width: 92vw;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 999999;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #202124;
+  animation: lgFadeIn 0.12s ease;
+}
+
+@keyframes lgFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#location-gear-dropdown.visible {
+  display: flex;
+}
+
+/* Search Box Header */
+.lg-dropdown-header {
+  padding: 12px 14px 8px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.lg-search-box {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #202124;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lg-search-box:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.18);
+}
+
+.lg-search-box::placeholder {
+  color: #70757a;
+}
+
+/* Settings Bar (Language Lock & Strict Local) */
+.lg-settings-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e8eaed;
+  font-size: 11px;
+}
+
+.lg-toggle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  color: #444746;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lg-toggle-item:hover {
+  color: #1a73e8;
+}
+
+.lg-mini-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1px solid #bdc1c6;
+  border-radius: 4px;
+  outline: none;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: all 0.15s ease;
+}
+
+.lg-mini-checkbox:checked {
+  background: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.lg-mini-checkbox:checked::after {
+  content: "✔";
+  position: absolute;
+  top: -1px;
+  left: 2px;
+  font-size: 10px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+/* Recents Bar */
+.lg-recents-section {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 11px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lg-recents-label {
+  color: #5f6368;
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.lg-recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.lg-recent-chip:hover {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+/* Custom Location Item */
+.lg-custom-location-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #e8f0fe;
+  border-bottom: 1px solid #d2e3fc;
+  color: #1a73e8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.lg-custom-location-item:hover,
+.lg-custom-location-item.highlighted {
+  background: #d2e3fc;
+  color: #1557b0;
+}
+
+/* Quick Top Markets */
+.lg-quick-section {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f3f4;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lg-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #f1f3f4;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.lg-quick-btn:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.lg-quick-btn.active {
+  background: #1a73e8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Tier Tabs */
+.lg-tier-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f3f4;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lg-tier-tab {
+  padding: 4px 10px;
+  background: #f1f3f4;
+  border: none;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5f6368;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.lg-tier-tab:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.lg-tier-tab.active {
+  background: #1a73e8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Country List */
+.lg-country-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+  list-style: none;
+  margin: 0;
+  background: #ffffff;
+}
+
+.lg-country-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  user-select: none;
+}
+
+.lg-country-item:hover,
+.lg-country-item.highlighted,
+.lg-country-item.selected {
+  background: #f1f3f4;
+}
+
+.lg-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-item-flag {
+  font-size: 16px;
+}
+
+.lg-item-name {
+  font-size: 12px;
+  color: #202124;
+  font-weight: 400;
+}
+
+.lg-item-code {
+  font-size: 11px;
+  color: #70757a;
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.lg-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tier Badges (Clean Soft Colors Matching Popup) */
+.lg-tier-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.lg-tier-badge.t1 {
+  background: #ceead6;
+  color: #0d652d;
+}
+
+.lg-tier-badge.t2 {
+  background: #d2e3fc;
+  color: #185abc;
+}
+
+.lg-tier-badge.t3 {
+  background: #feefc3;
+  color: #b06000;
+}
+
+/* City Sub-list */
+.lg-city-btn {
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 1px 6px;
+  color: #1a73e8;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.lg-city-btn:hover {
+  background: #e8f0fe;
+}
+
+.lg-cities-sublist {
+  padding: 4px 14px 6px 36px;
+  background: #fafafa;
+  border-bottom: 1px solid #f1f3f4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lg-city-chip {
+  font-size: 10px;
+  padding: 2px 7px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #3c4043;
+  transition: all 0.12s ease;
+}
+
+.lg-city-chip:hover {
+  background: #1a73e8;
+  color: #ffffff;
+  border-color: #1a73e8;
+}
+
+/* Dropdown Footer */
+.lg-dropdown-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid #e8eaed;
+  font-size: 11px;
+  color: #70757a;
+  background: #f8f9fa;
+}
+
+.lg-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34a853;
+  margin-right: 4px;
+}
+
+.lg-shortcut-hint {
+  font-size: 10px;
+  color: #80868b;
+}
