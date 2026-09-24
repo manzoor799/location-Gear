@@ -961,6 +961,69 @@
   border: none;
 }
 
+.lg-compare-hint-bar {
+  padding: 6px 20px;
+  background: #282a2d;
+  border-bottom: 1px solid #3c4043;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  color: #bdc1c6;
+  text-align: center;
+}
+
+.lg-compare-hint-bar strong {
+  color: #8ab4f8;
+}
+
+.lg-pane-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-pane-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa0a6;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.lg-compare-select {
+  padding: 4px 10px;
+  background: #202124;
+  color: #e8eaed;
+  border: 1px solid #5f6368;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lg-compare-select:hover {
+  border-color: #8ab4f8;
+  background: #282a2d;
+}
+
+.lg-compare-select:focus {
+  border-color: #8ab4f8;
+  box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+}
+
+.lg-param-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #282a2d;
+  color: #8ab4f8;
+  border: 1px solid #3c4043;
+  font-family: monospace;
+}
+
 .lg-compare-divider-badge {
   position: absolute;
   top: 50%;

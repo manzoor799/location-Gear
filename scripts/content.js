@@ -865,83 +865,150 @@
   }
 
   // ========================================================
-  // Dual-SERP Split Comparison Overlay
+  // Dual-SERP Split Comparison Overlay (Interactive 196 Countries)
   // ========================================================
   function openDualCompareModal() {
     const existing = document.getElementById('location-gear-compare-modal');
     if (existing) existing.remove();
 
-    const currentLoc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸' };
-    const compareCode = currentLoc.code === 'US' ? 'GB' : 'US';
-    const compareLoc = findCountry(compareCode) || { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' };
+    let currentLoc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸' };
+    let defaultRightCode = currentLoc.code === 'US' ? 'GB' : 'US';
 
-    const query = new URL(window.location.href).searchParams.get('q') || '';
-    const leftUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${currentLoc.code.toLowerCase()}&hl=en`;
-    const rightUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${compareLoc.code.toLowerCase()}&hl=en`;
+    chrome.storage.local.get(['lastCompareCode'], function (res) {
+      if (res.lastCompareCode && res.lastCompareCode !== currentLoc.code) {
+        defaultRightCode = res.lastCompareCode;
+      }
 
-    const overlay = document.createElement('div');
-    overlay.id = 'location-gear-compare-modal';
-    overlay.className = 'lg-compare-overlay';
+      let rightLoc = findCountry(defaultRightCode) || findCountry('US') || { code: 'US', name: 'United States', flag: '🇺🇸' };
+      const query = new URL(window.location.href).searchParams.get('q') || '';
 
-    overlay.innerHTML = `
-      <div class="lg-compare-header">
-        <div class="lg-compare-header-left">
-          <span style="font-size: 18px;">🌍</span>
-          <span class="lg-compare-title">Dual SERP Split View: "${escapeHtml(query)}"</span>
-        </div>
+      const overlay = document.createElement('div');
+      overlay.id = 'location-gear-compare-modal';
+      overlay.className = 'lg-compare-overlay';
 
-        <div class="lg-compare-header-actions">
-          <button type="button" class="lg-compare-btn" id="lg-compare-swap-btn">
-            <span>🔄 Swap Countries</span>
-          </button>
-          <button type="button" class="lg-compare-btn primary" id="lg-compare-close-btn">
-            <span>✕ Close Split View</span>
-          </button>
-        </div>
-      </div>
+      // Build country options for select dropdowns
+      let leftOptions = '';
+      let rightOptions = '';
+      COUNTRIES.forEach(function (c) {
+        const leftSelected = c.code === currentLoc.code ? 'selected' : '';
+        const rightSelected = c.code === rightLoc.code ? 'selected' : '';
+        leftOptions += `<option value="${c.code}" ${leftSelected}>${c.flag} ${c.name} (${c.code})</option>`;
+        rightOptions += `<option value="${c.code}" ${rightSelected}>${c.flag} ${c.name} (${c.code})</option>`;
+      });
 
-      <div class="lg-compare-split-body">
-        <div class="lg-compare-pane left">
-          <div class="lg-compare-pane-header">
-            <span>[ ${currentLoc.flag} ${currentLoc.name} SERP ]</span>
-            <span style="font-weight: 500; color: #5f6368;">gl=${currentLoc.code.toLowerCase()}</span>
+      const leftUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${currentLoc.code.toLowerCase()}&hl=en`;
+      const rightUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${rightLoc.code.toLowerCase()}&hl=en`;
+
+      overlay.innerHTML = `
+        <div class="lg-compare-header">
+          <div class="lg-compare-header-left">
+            <span style="font-size: 18px;">🌍</span>
+            <span class="lg-compare-title">Dual SERP Split View: "${escapeHtml(query)}"</span>
           </div>
-          <iframe class="lg-compare-frame" id="lg-frame-left" src="${leftUrl}"></iframe>
-        </div>
 
-        <div class="lg-compare-divider-badge">⇄</div>
-
-        <div class="lg-compare-pane right">
-          <div class="lg-compare-pane-header">
-            <span>[ ${compareLoc.flag} ${compareLoc.name} SERP ]</span>
-            <span style="font-weight: 500; color: #5f6368;">gl=${compareLoc.code.toLowerCase()}</span>
+          <div class="lg-compare-header-actions">
+            <button type="button" class="lg-compare-btn" id="lg-compare-swap-btn" title="Swap left and right country views">
+              <span>🔄 Swap Countries</span>
+            </button>
+            <button type="button" class="lg-compare-btn primary" id="lg-compare-close-btn">
+              <span>✕ Close Split View</span>
+            </button>
           </div>
-          <iframe class="lg-compare-frame" id="lg-frame-right" src="${rightUrl}"></iframe>
         </div>
-      </div>
-    `;
 
-    document.body.appendChild(overlay);
+        <div class="lg-compare-hint-bar">
+          <span>💡 <strong>Real-Time Cross-Border SERP</strong>: Pick any 2 countries to compare how Google ranks local competitors, Reddit discussions, and ads.</span>
+        </div>
 
-    overlay.querySelector('#lg-compare-close-btn').addEventListener('click', function () {
-      overlay.remove();
-    });
+        <div class="lg-compare-split-body">
+          <!-- Left Pane -->
+          <div class="lg-compare-pane left">
+            <div class="lg-compare-pane-header">
+              <div class="lg-pane-header-title">
+                <span class="lg-pane-label">Country 1:</span>
+                <select class="lg-compare-select" id="lg-select-left">
+                  ${leftOptions}
+                </select>
+              </div>
+              <span class="lg-param-pill" id="lg-pill-left">gl=${currentLoc.code.toLowerCase()}</span>
+            </div>
+            <iframe class="lg-compare-frame" id="lg-frame-left" src="${leftUrl}"></iframe>
+          </div>
 
-    overlay.querySelector('#lg-compare-swap-btn').addEventListener('click', function () {
+          <div class="lg-compare-divider-badge" title="Side-by-side synchronized view">⇄</div>
+
+          <!-- Right Pane -->
+          <div class="lg-compare-pane right">
+            <div class="lg-compare-pane-header">
+              <div class="lg-pane-header-title">
+                <span class="lg-pane-label">Country 2:</span>
+                <select class="lg-compare-select" id="lg-select-right">
+                  ${rightOptions}
+                </select>
+              </div>
+              <span class="lg-param-pill" id="lg-pill-right">gl=${rightLoc.code.toLowerCase()}</span>
+            </div>
+            <iframe class="lg-compare-frame" id="lg-frame-right" src="${rightUrl}"></iframe>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      const leftSelect = overlay.querySelector('#lg-select-left');
+      const rightSelect = overlay.querySelector('#lg-select-right');
       const leftFrame = overlay.querySelector('#lg-frame-left');
       const rightFrame = overlay.querySelector('#lg-frame-right');
-      const tempSrc = leftFrame.src;
-      leftFrame.src = rightFrame.src;
-      rightFrame.src = tempSrc;
-    });
+      const pillLeft = overlay.querySelector('#lg-pill-left');
+      const pillRight = overlay.querySelector('#lg-pill-right');
 
-    const escHandler = function (e) {
-      if (e.key === 'Escape') {
+      // Change Left Country
+      leftSelect.addEventListener('change', function () {
+        const code = leftSelect.value;
+        pillLeft.textContent = `gl=${code.toLowerCase()}`;
+        leftFrame.src = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${code.toLowerCase()}&hl=en`;
+      });
+
+      // Change Right Country
+      rightSelect.addEventListener('change', function () {
+        const code = rightSelect.value;
+        pillRight.textContent = `gl=${code.toLowerCase()}`;
+        rightFrame.src = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${code.toLowerCase()}&hl=en`;
+        chrome.storage.local.set({ lastCompareCode: code });
+      });
+
+      // Swap Countries
+      overlay.querySelector('#lg-compare-swap-btn').addEventListener('click', function () {
+        const leftVal = leftSelect.value;
+        const rightVal = rightSelect.value;
+
+        leftSelect.value = rightVal;
+        rightSelect.value = leftVal;
+
+        pillLeft.textContent = `gl=${rightVal.toLowerCase()}`;
+        pillRight.textContent = `gl=${leftVal.toLowerCase()}`;
+
+        const tempSrc = leftFrame.src;
+        leftFrame.src = rightFrame.src;
+        rightFrame.src = tempSrc;
+
+        chrome.storage.local.set({ lastCompareCode: leftVal });
+      });
+
+      // Close Split View
+      overlay.querySelector('#lg-compare-close-btn').addEventListener('click', function () {
         overlay.remove();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
+      });
+
+      // Close on Escape
+      const escHandler = function (e) {
+        if (e.key === 'Escape') {
+          overlay.remove();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    });
   }
 
   function escapeHtml(str) {
