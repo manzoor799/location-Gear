@@ -167,20 +167,15 @@
 
   function renderBadgeHTML(wrapper) {
     const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1, lat: 37.0902, lng: -95.7129 };
-    const isDark = isGoogleDarkMode();
-    if (isDark) {
-      wrapper.classList.add('lg-dark');
-    } else {
-      wrapper.classList.remove('lg-dark');
-    }
 
-    let favoriteChipsHtml = '';
-    favoriteCodes.forEach(function (code) {
+    let quickPillsHtml = '';
+    const topMarkets = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN', 'ES', 'IT'];
+    topMarkets.forEach(function (code) {
       const c = findCountry(code);
       if (c) {
         const isSelected = locationEnabled && c.code === loc.code;
-        favoriteChipsHtml += `
-          <button type="button" class="lg-fav-chip ${isSelected ? 'active' : ''}" data-code="${c.code}" title="${c.name}">
+        quickPillsHtml += `
+          <button type="button" class="lg-quick-chip ${isSelected ? 'active' : ''}" data-code="${c.code}" title="Switch to ${c.name}">
             <span>${c.flag}</span>
             <span>${c.code}</span>
           </button>
@@ -196,78 +191,50 @@
         <span class="lg-badge-arrow">▾</span>
       </button>
 
-      <!-- Dropdown Menu: Exact Visual Twin of Extension Popup -->
-      <div id="location-gear-dropdown" class="${isDark ? 'lg-dark' : ''}">
-        <!-- Top Navigation Header -->
+      <!-- In-SERP Quick-Switcher & Action Toolbelt (Light, Snappy, Non-Intrusive) -->
+      <div id="location-gear-dropdown">
+        <!-- Compact Header -->
         <div class="lg-header">
           <div class="lg-logo">
             <span class="lg-logo-icon">🌍</span>
             <span class="lg-logo-text">Location Gear</span>
+            <span class="lg-active-pill ${locationEnabled ? '' : 'disabled'}" id="lg-active-pill">
+              ${locationEnabled ? (loc.flag + ' ' + loc.code) : 'OFF'}
+            </span>
           </div>
-          <div class="lg-toggle-status-wrap">
-            <span class="lg-status-label ${locationEnabled ? '' : 'disabled'}" id="lg-status-label">${locationEnabled ? 'ACTIVE' : 'DISABLED'}</span>
-            <label class="lg-switch" title="Toggle Location Spoofing">
-              <input type="checkbox" id="lg-spoof-toggle" ${locationEnabled ? 'checked' : ''}>
-              <span class="lg-slider round"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Master Action Button -->
-        <div class="lg-master-action-section">
-          <button type="button" class="lg-btn-master-reset ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="Turn off spoofing and restore your real physical location">
+          <button type="button" class="lg-btn-reset-mini ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="Turn off spoofing and restore your real physical location">
             <span class="lg-btn-icon">⏻</span>
-            <span id="lg-master-btn-text">${locationEnabled ? 'Turn Off / Back to Real Location' : '✓ Turn On Location Spoofing'}</span>
+            <span>${locationEnabled ? 'Reset to Real' : 'Turn On'}</span>
           </button>
         </div>
 
-        <!-- Active Region Card -->
-        <div class="lg-active-card ${!locationEnabled ? 'disabled' : ''}" id="lg-active-card">
-          <div class="lg-active-badge-bar">
-            <span class="lg-active-badge-title">Active Region</span>
-            <span class="lg-tier-pill t${loc.tier || 1}">Tier ${loc.tier || 1}</span>
-          </div>
-          <div class="lg-active-content">
-            <span class="lg-active-flag">${loc.flag || '🌐'}</span>
-            <div class="lg-active-info">
-              <h2>${loc.name} (${loc.code})</h2>
-              <p>${loc.lat ? loc.lat.toFixed(4) + '° N, ' + loc.lng.toFixed(4) + '° W' : 'Zero-Lag gl Engine'}</p>
-            </div>
+        <!-- 1-Tap Quick Switch Markets -->
+        <div class="lg-quick-section">
+          <span class="lg-section-label">⚡ 1-Tap Quick Switch</span>
+          <div class="lg-quick-chips">
+            ${quickPillsHtml}
           </div>
         </div>
 
-        <!-- Quick Select Favorites -->
-        <div class="lg-favorites-section">
-          <span class="lg-section-title">Quick Select Favorites</span>
-          <div class="lg-favorite-chips" id="lg-favorite-chips">
-            ${favoriteChipsHtml}
-          </div>
-        </div>
-
-        <!-- Search Section -->
+        <!-- Fast Search Input -->
         <div class="lg-search-section">
-          <span class="lg-section-title">Select Any Country</span>
-          <input type="text" class="lg-search-box" id="lg-search-input" placeholder="🔍 Search 196 countries, codes, cities..." autocomplete="off">
+          <input type="text" class="lg-search-box" id="lg-search-input" placeholder="🔍 Search any country (e.g. Spain, JP, Dubai)..." autocomplete="off">
         </div>
 
-        <!-- Tier Filter Tabs (Segmented Control) -->
-        <div class="lg-tabs-wrapper">
-          <div class="lg-tier-tabs" role="tablist">
-            <button type="button" class="lg-tier-tab ${activeTierFilter === 'all' ? 'active' : ''}" data-tier="all">All (196)</button>
-            <button type="button" class="lg-tier-tab ${activeTierFilter === '1' ? 'active' : ''}" data-tier="1">Tier 1 (24)</button>
-            <button type="button" class="lg-tier-tab ${activeTierFilter === '2' ? 'active' : ''}" data-tier="2">Tier 2 (36)</button>
-            <button type="button" class="lg-tier-tab ${activeTierFilter === '3' ? 'active' : ''}" data-tier="3">Tier 3 (136)</button>
-          </div>
-        </div>
-
-        <!-- Scrollable Country List -->
-        <div class="lg-list-container">
+        <!-- Autocomplete Country List (Expands on search) -->
+        <div class="lg-list-container" id="lg-list-container" style="display: none;">
           <ul class="lg-country-list" id="lg-country-list">
           </ul>
         </div>
 
-        <!-- SERP Power Tools Toolbar -->
+        <!-- In-SERP Power Tools -->
         <div class="lg-tools-bar">
+          <button type="button" class="lg-tool-btn primary" id="lg-btn-open-compare" title="Compare side-by-side with another country in real-time">
+            <span>📊 Dual Compare</span>
+          </button>
+          <button type="button" class="lg-tool-btn" id="lg-btn-open-extractor" title="Extract all organic ranking URLs to CSV">
+            <span>📥 Export CSV</span>
+          </button>
           <button type="button" class="lg-tool-btn ${isTop100 ? 'active' : ''}" id="lg-btn-toggle-top100" title="Toggle 100 Search Results per Page">
             <span>⚡ 100 Results</span>
           </button>
@@ -275,29 +242,17 @@
             <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-lang" ${languageLock ? 'checked' : ''}>
             <span>English UI</span>
           </label>
-          <button type="button" class="lg-tool-btn" id="lg-btn-open-compare" title="Compare side-by-side with another country">
-            <span>📊 Compare</span>
-          </button>
-          <button type="button" class="lg-tool-btn" id="lg-btn-open-extractor" title="Extract all organic ranking URLs to CSV">
-            <span>📥 Export CSV</span>
-          </button>
         </div>
 
         <!-- Footer -->
         <div class="lg-dropdown-footer">
           <span class="lg-footer-guarantee">🛡️ Zero-Lag gl Engine • 0 CAPTCHAs</span>
-          <span class="lg-shortcut-hint">Alt+L • ESC to close</span>
+          <span class="lg-shortcut-hint">Alt+L • ESC</span>
         </div>
       </div>
     `;
 
     renderCountryList(wrapper);
-  }
-
-  function isGoogleDarkMode() {
-    const bg = window.getComputedStyle(document.body).backgroundColor;
-    if (bg && (bg.includes('32, 33, 36') || bg.includes('31, 31, 31') || bg.includes('48, 49, 52'))) return true;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   function renderCountryList(container) {
@@ -308,9 +263,6 @@
 
     const query = searchQuery.trim().toLowerCase();
     const filtered = COUNTRIES.filter(function (c) {
-      if (activeTierFilter !== 'all' && String(c.tier) !== String(activeTierFilter)) {
-        return false;
-      }
       if (!query) return true;
       const matchesName = c.name.toLowerCase().includes(query);
       const matchesCode = c.code.toLowerCase().includes(query);
@@ -332,7 +284,7 @@
     }
 
     if (filtered.length === 0 && query.length < 2) {
-      listEl.innerHTML = `<li style="padding: 16px; text-align: center; color: #70757a; font-size: 11px;">No countries found in Tier ${activeTierFilter}</li>`;
+      listEl.innerHTML = `<li style="padding: 12px; text-align: center; color: #70757a; font-size: 11px;">No countries found</li>`;
       return;
     }
 
@@ -373,8 +325,8 @@
   function setupEventListeners(wrapper) {
     const badge = wrapper.querySelector('#location-gear-badge');
     const searchInput = wrapper.querySelector('#lg-search-input');
+    const listContainer = wrapper.querySelector('#lg-list-container');
     const toggleLang = wrapper.querySelector('#lg-toggle-lang');
-    const spoofToggle = wrapper.querySelector('#lg-spoof-toggle');
     const resetBtn = wrapper.querySelector('#lg-btn-reset-home');
     const top100Btn = wrapper.querySelector('#lg-btn-toggle-top100');
     const extractorBtn = wrapper.querySelector('#lg-btn-open-extractor');
@@ -385,28 +337,6 @@
       e.stopPropagation();
       toggleDropdown();
     });
-
-    // Spoof switch toggle
-    if (spoofToggle) {
-      spoofToggle.addEventListener('change', function (e) {
-        e.stopPropagation();
-        locationEnabled = spoofToggle.checked;
-        chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
-          if (!locationEnabled) {
-            chrome.runtime.sendMessage({ action: 'RESET_TO_HOME' });
-            const url = new URL(window.location.href);
-            url.searchParams.delete('gl');
-            url.searchParams.delete('uule');
-            url.searchParams.delete('cr');
-            url.searchParams.delete('pws');
-            if (url.searchParams.get('num') === '100') url.searchParams.delete('num');
-            window.location.href = url.toString();
-          } else {
-            applyLocation(activeLocation);
-          }
-        });
-      });
-    }
 
     // Reset to Real Location button
     if (resetBtn) {
@@ -484,6 +414,9 @@
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
         searchQuery = e.target.value;
+        if (listContainer) {
+          listContainer.style.display = searchQuery.trim().length > 0 ? 'block' : 'none';
+        }
         renderCountryList(wrapper);
       });
 
@@ -510,24 +443,11 @@
       });
     }
 
-    // Tier Tabs (Segmented Control)
-    wrapper.querySelectorAll('.lg-tier-tab').forEach(function (tab) {
-      tab.addEventListener('click', function (e) {
-        e.stopPropagation();
-        wrapper.querySelectorAll('.lg-tier-tab').forEach(function (t) { t.classList.remove('active'); });
-        tab.classList.add('active');
-        activeTierFilter = tab.getAttribute('data-tier');
-        renderCountryList(wrapper);
-        const listContainer = wrapper.querySelector('.lg-list-container');
-        if (listContainer) listContainer.scrollTop = 0;
-      });
-    });
-
-    // Favorite Chips
-    const favSection = wrapper.querySelector('#lg-favorite-chips');
-    if (favSection) {
-      favSection.addEventListener('click', function (e) {
-        const chip = e.target.closest('.lg-fav-chip');
+    // Quick Chips click
+    const quickSection = wrapper.querySelector('.lg-quick-chips');
+    if (quickSection) {
+      quickSection.addEventListener('click', function (e) {
+        const chip = e.target.closest('.lg-quick-chip');
         if (chip) {
           e.stopPropagation();
           const code = chip.getAttribute('data-code');
