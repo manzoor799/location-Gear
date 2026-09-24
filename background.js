@@ -7,12 +7,11 @@
  * - Right-click context menu searches
  * - All Google domains and tabs
  * 
- * Fixes:
- * 1. Zero Cold-Start Race Conditions: Directly reads persistent storage on every navigation event
- *    so searches in new tabs are never dropped when the service worker is waking up from sleep.
- * 2. Permanently Eliminates Google 403 Forbidden: Strips Google Ads scraper tokens (`uule` and `pws=0`)
- *    from standard country searches and only uses clean, native `gl` and `hl` parameters.
- * 3. Sanitizes URL formatting: Eliminates double ampersands (&&) and malformed query strings.
+ * Permanent Fix for Google 403 Forbidden:
+ * 1. ZERO Botguard Tampering: No DOM attribute injection or native JS API overrides.
+ * 2. Purges scraper tokens (uule and pws=0) and restrictive cr parameters.
+ * 3. Sanitizes context-menu telemetry (source=chrome.ctxt) to prevent request rejection.
+ * 4. Zero cold-start race conditions: Directly reads persistent storage on every navigation.
  */
 
 importScripts('data/countries.js');
@@ -32,18 +31,18 @@ function getLocalizedUrl(rawUrl, settings) {
     const currentGl = url.searchParams.get('gl');
     const currentHl = url.searchParams.get('hl');
     const isLangLock = settings.languageLock !== false;
-    const isStrictLocal = settings.strictLocalFilter === true;
 
     // Check if the URL is already clean and correctly localized
     const hasUule = url.searchParams.has('uule');
     const hasPws = url.searchParams.has('pws');
+    const hasCr = url.searchParams.has('cr');
+    const hasContextSource = url.searchParams.get('source') === 'chrome.ctxt';
     const hasDoubleAmp = rawUrl.includes('&&') || rawUrl.includes('?&') || rawUrl.endsWith('&');
 
     const glMatches = currentGl && currentGl.toLowerCase() === targetCode;
     const hlMatches = !isLangLock || currentHl === 'en';
-    const crMatches = !isStrictLocal || url.searchParams.get('cr') === ('country' + targetCode.toUpperCase());
 
-    if (glMatches && hlMatches && crMatches && !hasUule && !hasPws && !hasDoubleAmp) {
+    if (glMatches && hlMatches && !hasUule && !hasPws && !hasCr && !hasContextSource && !hasDoubleAmp) {
       return null; // Already correctly localized and sanitized
     }
 
@@ -55,16 +54,16 @@ function getLocalizedUrl(rawUrl, settings) {
       url.searchParams.set('hl', 'en');
     }
 
-    // 3. Strict Country Filter (cr)
-    if (isStrictLocal) {
-      url.searchParams.set('cr', 'country' + targetCode.toUpperCase());
-    } else {
-      url.searchParams.delete('cr');
-    }
-
-    // 4. PURGE anti-bot / scraper flags that cause Google 403 Forbidden
+    // 3. PURGE all anti-bot / scraper / restrictive flags that cause Google 403 Forbidden:
     url.searchParams.delete('uule');
     url.searchParams.delete('pws');
+    url.searchParams.delete('cr');
+
+    // 4. Strip internal context tracking that triggers 403 when query is modified
+    if (url.searchParams.get('source') === 'chrome.ctxt') {
+      url.searchParams.delete('source');
+      url.searchParams.delete('sourceid');
+    }
 
     // 5. Clean up delimiters
     let cleanHref = url.toString()
@@ -82,7 +81,7 @@ function getLocalizedUrl(rawUrl, settings) {
  * Intercept all Google Search navigations across the entire browser:
  * - New Tabs
  * - Address Bar (Omnibox)
- * - Context menu searches
+ * - Context menu right-click searches
  * - Bookmarks and links
  */
 chrome.webNavigation.onBeforeNavigate.addListener(async function (details) {
@@ -94,11 +93,11 @@ chrome.webNavigation.onBeforeNavigate.addListener(async function (details) {
 
   try {
     // Read persistent storage directly — NO in-memory cold-start race conditions!
-    const settings = await chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'strictLocalFilter']);
+    const settings = await chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock']);
     if (settings.locationEnabled === false) return;
 
     const cleanHref = getLocalizedUrl(rawUrl, settings);
-    if (cleanHref) {
+    if (cleanHref && cleanHref !== rawUrl) {
       chrome.tabs.update(details.tabId, { url: cleanHref });
     }
   } catch (err) {
@@ -106,32 +105,10 @@ chrome.webNavigation.onBeforeNavigate.addListener(async function (details) {
   }
 });
 
-/**
- * Also listen to client-side SPA navigation updates (pushState / popState)
- */
-chrome.webNavigation.onHistoryStateUpdated.addListener(async function (details) {
-  if (details.frameId !== 0) return;
-
-  const rawUrl = details.url;
-  if (!rawUrl || !rawUrl.includes('google.') || !rawUrl.includes('/search')) return;
-
-  try {
-    const settings = await chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'strictLocalFilter']);
-    if (settings.locationEnabled === false) return;
-
-    const cleanHref = getLocalizedUrl(rawUrl, settings);
-    if (cleanHref) {
-      chrome.tabs.update(details.tabId, { url: cleanHref });
-    }
-  } catch (err) {
-    console.error('[Location Gear] onHistoryStateUpdated error:', err);
-  }
-});
-
 // Message listener for popup or content script communications
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'GET_LOCATION') {
-    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'strictLocalFilter'], function (res) {
+    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock'], function (res) {
       sendResponse(res);
     });
     return true;
@@ -165,8 +142,7 @@ chrome.runtime.onInstalled.addListener(function () {
       chrome.storage.local.set({
         activeLocation: defaultLoc,
         locationEnabled: true,
-        languageLock: true,
-        strictLocalFilter: false
+        languageLock: true
       });
     }
   });

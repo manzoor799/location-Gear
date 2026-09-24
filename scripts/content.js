@@ -32,7 +32,6 @@
 
   // User Settings
   let languageLock = true;        // Default: Keep English UI (hl=en)
-  let strictLocalFilter = false;  // Default: Off (cr=countryXX)
   let recentCodes = ['US', 'CA', 'GB', 'FR'];
 
   function init() {
@@ -49,9 +48,11 @@
   function loadSettings(callback) {
     const url = new URL(window.location.href);
 
-    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'strictLocalFilter', 'recentCodes'], function (res) {
+    // Clean up any legacy strictLocalFilter from storage to prevent 403 blocks
+    chrome.storage.local.remove('strictLocalFilter');
+
+    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'recentCodes'], function (res) {
       if (res.languageLock !== undefined) languageLock = res.languageLock;
-      if (res.strictLocalFilter !== undefined) strictLocalFilter = res.strictLocalFilter;
       if (Array.isArray(res.recentCodes) && res.recentCodes.length > 0) {
         recentCodes = res.recentCodes;
       }
@@ -64,19 +65,21 @@
         chrome.storage.local.set({ activeLocation: activeLocation });
       }
 
-      // Auto-enforce active location on search pages if missing, mismatched, or corrupted with uule/pws
+      // Auto-enforce active location on search pages if missing, mismatched, or corrupted with uule/pws/cr/ctxt
       if (res.locationEnabled !== false && url.pathname === '/search' && url.searchParams.has('q')) {
         const currentGl = url.searchParams.get('gl');
         const currentHl = url.searchParams.get('hl');
         const targetCode = activeLocation.code.toLowerCase();
         const hasUule = url.searchParams.has('uule');
         const hasPws = url.searchParams.has('pws');
+        const hasCr = url.searchParams.has('cr');
+        const hasContextSource = url.searchParams.get('source') === 'chrome.ctxt';
         const hasDoubleAmp = window.location.href.includes('&&') || window.location.href.includes('?&');
 
         const glMismatched = !currentGl || currentGl.toLowerCase() !== targetCode;
         const hlMismatched = languageLock && currentHl !== 'en';
 
-        if (glMismatched || hlMismatched || hasUule || hasPws || hasDoubleAmp) {
+        if (glMismatched || hlMismatched || hasUule || hasPws || hasCr || hasContextSource || hasDoubleAmp) {
           applyLocation(activeLocation);
           return;
         }
@@ -195,16 +198,13 @@
           <input type="text" class="lg-search-box" id="lg-search-input" placeholder="🔍 Search country, code, city, or ZIP..." autocomplete="off">
         </div>
 
-        <!-- Settings Bar (Language Lock & Strict Local) -->
+        <!-- Settings Bar (Language Lock) -->
         <div class="lg-settings-bar">
           <label class="lg-toggle-item" title="Forces Google's navigation interface to stay in English (hl=en) while search results stay geographically localized">
             <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-lang" ${languageLock ? 'checked' : ''}>
             <span>Keep English UI</span>
           </label>
-          <label class="lg-toggle-item" title="Appends cr=countryXX to strictly filter out foreign sites and show only local registered domains">
-            <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-strict" ${strictLocalFilter ? 'checked' : ''}>
-            <span>Strict Local (cr)</span>
-          </label>
+          <span style="font-size: 11px; color: #1a73e8; font-weight: 500;">✓ Safe Regional Index</span>
         </div>
 
         <!-- Recents Bar -->
@@ -335,13 +335,7 @@
       });
     }
 
-    // Strict Local Filter Toggle
-    if (toggleStrict) {
-      toggleStrict.addEventListener('change', function () {
-        strictLocalFilter = toggleStrict.checked;
-        chrome.storage.local.set({ strictLocalFilter: strictLocalFilter });
-      });
-    }
+
 
     // Close on outside click
     document.addEventListener('click', function (e) {
@@ -604,18 +598,6 @@
       activeLocation: locationObj,
       locationEnabled: true
     }, function () {
-      // Notify injected main-world script of coordinates, timezone, and language
-      window.dispatchEvent(new CustomEvent('__LOCATION_GEAR_SET_LOCATION__', {
-        detail: {
-          code: locationObj.code,
-          lat: locationObj.lat,
-          lng: locationObj.lng,
-          timezone: tz,
-          enabled: true,
-          languageLock: languageLock
-        }
-      }));
-
       const currentUrl = new URL(window.location.href);
 
       // Check if on Google Maps
@@ -637,22 +619,15 @@
         currentUrl.searchParams.set('hl', nativeLang);
       }
 
-      // 3. Strict Country Filter (cr)
-      if (strictLocalFilter) {
-        currentUrl.searchParams.set('cr', 'country' + locationObj.code.toUpperCase());
-      } else {
-        currentUrl.searchParams.delete('cr');
-      }
-
-      // 4. PURGE anti-bot / scraper flags (uule & pws) that trigger Google 403 Forbidden!
-      if (locationObj.isCustom) {
-        const canonical = locationObj.canonicalName || locationObj.name;
-        const uuleToken = generateUule(canonical);
-        if (uuleToken) currentUrl.searchParams.set('uule', uuleToken);
-      } else {
-        currentUrl.searchParams.delete('uule');
-      }
+      // 3. PURGE anti-bot / scraper / telemetry flags that trigger Google 403 Forbidden:
+      currentUrl.searchParams.delete('cr');
+      currentUrl.searchParams.delete('uule');
       currentUrl.searchParams.delete('pws');
+
+      if (currentUrl.searchParams.get('source') === 'chrome.ctxt') {
+        currentUrl.searchParams.delete('source');
+        currentUrl.searchParams.delete('sourceid');
+      }
 
       // Sanitize URL: clean any double ampersands (&&) or malformed delimiters
       const cleanHref = currentUrl.toString()

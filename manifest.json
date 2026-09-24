@@ -87,43 +87,6 @@
         "*://*.google.com.tr/*"
       ],
       "js": [
-        "scripts/inject-loader.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": false
-    },
-    {
-      "matches": [
-        "*://*.google.com/*",
-        "*://*.google.ca/*",
-        "*://*.google.co.uk/*",
-        "*://*.google.de/*",
-        "*://*.google.fr/*",
-        "*://*.google.it/*",
-        "*://*.google.es/*",
-        "*://*.google.nl/*",
-        "*://*.google.ch/*",
-        "*://*.google.se/*",
-        "*://*.google.no/*",
-        "*://*.google.dk/*",
-        "*://*.google.fi/*",
-        "*://*.google.be/*",
-        "*://*.google.at/*",
-        "*://*.google.pl/*",
-        "*://*.google.pt/*",
-        "*://*.google.co.jp/*",
-        "*://*.google.co.in/*",
-        "*://*.google.com.au/*",
-        "*://*.google.com.br/*",
-        "*://*.google.com.mx/*",
-        "*://*.google.co.za/*",
-        "*://*.google.ae/*",
-        "*://*.google.com.sa/*",
-        "*://*.google.com.pk/*",
-        "*://*.google.co.id/*",
-        "*://*.google.com.tr/*"
-      ],
-      "js": [
         "data/countries.js",
         "scripts/content.js"
       ],
@@ -137,7 +100,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "scripts/inject-main.js",
         "data/countries.js",
         "icons/*"
       ],
