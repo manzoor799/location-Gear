@@ -1,17 +1,16 @@
 /**
- * Location Gear - SERP Content Script (Review-Backed Complete Edition)
+ * Location Gear - SERP Content Script (Clean & Minimal Edition)
  * 
  * Features:
- * 1. Native In-SERP Control Dock (Right under Google Search Tabs)
- * 2. Compact Badge directly below Google's Camera (Lens) icon
- * 3. 1-Click "Back to Real Location" Reset Button (Solves Courtland Gaba review)
- * 4. Automatic Organic Rank Badges (#1, #2, #3...)
- * 5. 1-Click SERP Data Extractor Modal (CSV Export & Clipboard Copy)
- * 6. Dual-SERP Split Comparison Mode (50/50 US vs UK View)
- * 7. 1-Tap Quick Select Favorite Chips (US, UK, CA, AU, DE)
- * 8. Top 100 Results Toggle (num=100)
- * 9. Safe Language Lock (hl=en)
- * 10. Zero CAPTCHA & Zero 403 gl-only engine
+ * 1. Compact Badge anchored directly below Google's Camera icon
+ * 2. 1-Click "Back to Real Location" Reset Button
+ * 3. 1-Click SERP Data Extractor Modal (CSV & Clipboard)
+ * 4. Dual-SERP Split Comparison Mode (50/50 US vs UK View)
+ * 5. 1-Tap Quick Select Favorite Chips (US, UK, CA, AU, DE)
+ * 6. Top 100 Results Toggle (num=100)
+ * 7. Safe Language Lock (Keep English UI hl=en)
+ * 8. Automatic Google Dark Mode & Light Mode adaptation
+ * 9. ZERO interference with Google page layout (No sidebars or intrusive popups)
  */
 
 (function () {
@@ -41,8 +40,6 @@
   function init() {
     loadSettings(function () {
       injectBadgeUnderCamera();
-      injectInSerpDock();
-      tagOrganicRanks();
       hookSearchForms();
       setupMutationObserver();
       setupKeyboardShortcuts();
@@ -122,424 +119,7 @@
         || document.querySelector('div.dRYYxd');
   }
 
-  // ========================================================
-  // In-SERP Control Dock
-  // ========================================================
-  function injectInSerpDock() {
-    if (document.getElementById('location-gear-dock')) {
-      updateDockUI();
-      return;
-    }
-
-    // Anchor dock above results
-    const targetContainer = document.getElementById('center_col') 
-                         || document.getElementById('rcnt') 
-                         || document.querySelector('div.GyAeWb') 
-                         || document.getElementById('searchform');
-    if (!targetContainer) return;
-
-    const dock = document.createElement('div');
-    dock.id = 'location-gear-dock';
-
-    targetContainer.parentNode.insertBefore(dock, targetContainer);
-    renderDockHTML(dock);
-    setupDockListeners(dock);
-  }
-
-  function renderDockHTML(dock) {
-    const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1 };
-    const currentNum = new URL(window.location.href).searchParams.get('num');
-    const top100Active = isTop100 || currentNum === '100';
-
-    let chipsHtml = '';
-    favoriteCodes.slice(0, 5).forEach(function (code) {
-      const c = findCountry(code);
-      if (c) {
-        const isActive = locationEnabled && c.code === loc.code;
-        chipsHtml += `
-          <button type="button" class="lg-dock-chip ${isActive ? 'active' : ''}" data-code="${c.code}" title="${c.name}">
-            <span>${c.flag}</span>
-            <span>${c.code}</span>
-          </button>
-        `;
-      }
-    });
-
-    dock.innerHTML = `
-      <div class="lg-dock-left">
-        <div class="lg-dock-brand" title="Location Gear SERP Switcher">
-          <span class="lg-dock-logo">🌍</span>
-          <span class="lg-dock-name">Location Gear</span>
-        </div>
-
-        <button type="button" class="lg-dock-country-btn" id="lg-dock-country-btn" title="Click to change target country">
-          <span class="lg-dock-flag">${loc.flag}</span>
-          <span class="lg-dock-country-name">${locationEnabled ? loc.name : 'Real Location (Default)'}</span>
-          <span class="lg-dock-arrow">▾</span>
-        </button>
-
-        <div class="lg-dock-chips">
-          ${chipsHtml}
-        </div>
-      </div>
-
-      <div class="lg-dock-right">
-        <button type="button" class="lg-dock-action-btn ${top100Active ? 'active' : ''}" id="lg-dock-top100-btn" title="Toggle 100 Search Results per Page (num=100)">
-          <span>⚡ Top 100</span>
-        </button>
-
-        <button type="button" class="lg-dock-action-btn" id="lg-dock-compare-btn" title="Compare side-by-side with another country">
-          <span>📊 Dual Compare</span>
-        </button>
-
-        <button type="button" class="lg-dock-action-btn" id="lg-dock-export-btn" title="Extract and Export organic rankings to CSV / Clipboard">
-          <span>📥 Export CSV</span>
-        </button>
-
-        <button type="button" class="lg-dock-action-btn lg-dock-reset-btn" id="lg-dock-reset-btn" title="Turn off spoofing and restore your real location">
-          <span>🔄 Reset to Home</span>
-        </button>
-
-        <span class="lg-dock-status">✓ 0 CAPTCHAs</span>
-      </div>
-    `;
-  }
-
-  function updateDockUI() {
-    const dock = document.getElementById('location-gear-dock');
-    if (dock) renderDockHTML(dock);
-  }
-
-  function setupDockListeners(dock) {
-    dock.addEventListener('click', function (e) {
-      // 1. Country button click -> opens dropdown
-      if (e.target.closest('#lg-dock-country-btn')) {
-        toggleDropdown();
-        return;
-      }
-
-      // 2. Favorite chip click -> switch country instantly
-      const chip = e.target.closest('.lg-dock-chip');
-      if (chip) {
-        const code = chip.getAttribute('data-code');
-        const country = findCountry(code);
-        if (country) applyLocation(country);
-        return;
-      }
-
-      // 3. Top 100 Toggle
-      if (e.target.closest('#lg-dock-top100-btn')) {
-        isTop100 = !isTop100;
-        chrome.storage.local.set({ top100: isTop100 }, function () {
-          const url = new URL(window.location.href);
-          if (isTop100) {
-            url.searchParams.set('num', '100');
-          } else {
-            url.searchParams.delete('num');
-          }
-          window.location.href = url.toString();
-        });
-        return;
-      }
-
-      // 4. Dual Compare
-      if (e.target.closest('#lg-dock-compare-btn')) {
-        openDualCompareModal();
-        return;
-      }
-
-      // 5. Export CSV
-      if (e.target.closest('#lg-dock-export-btn')) {
-        openExtractorModal();
-        return;
-      }
-
-      // 6. Reset to Home (Courtland Gaba review fix!)
-      if (e.target.closest('#lg-dock-reset-btn')) {
-        resetToRealLocation();
-        return;
-      }
-    });
-  }
-
-  // ========================================================
-  // 1-Click Master Reset to Real Location
-  // ========================================================
-  function resetToRealLocation() {
-    chrome.storage.local.set({ locationEnabled: false }, function () {
-      chrome.runtime.sendMessage({ action: 'RESET_TO_HOME' });
-      const url = new URL(window.location.href);
-      url.searchParams.delete('gl');
-      url.searchParams.delete('uule');
-      url.searchParams.delete('cr');
-      url.searchParams.delete('pws');
-      if (url.searchParams.get('num') === '100') {
-        url.searchParams.delete('num');
-      }
-      window.location.href = url.toString();
-    });
-  }
-
-  // ========================================================
-  // Organic Ranking Badges (#1, #2, #3...)
-  // ========================================================
-  function tagOrganicRanks() {
-    const rso = document.getElementById('rso');
-    if (!rso) return;
-
-    const organicBlocks = rso.querySelectorAll('div.MjjYud, div.g');
-    let rank = 1;
-
-    organicBlocks.forEach(function (block) {
-      // Exclude ads, people also ask, images, and videos
-      if (block.closest('[data-text-ad], .uEierd, .related-question-pair, [data-initq], .g-blk')) return;
-
-      const h3 = block.querySelector('h3');
-      if (h3 && !block.querySelector('.lg-serp-rank-badge')) {
-        const badge = document.createElement('span');
-        badge.className = 'lg-serp-rank-badge';
-        badge.textContent = '#' + rank;
-        h3.parentNode.insertBefore(badge, h3);
-        rank++;
-      }
-    });
-  }
-
-  // ========================================================
-  // 1-Click SERP Data Extractor Modal
-  // ========================================================
-  function extractSerpData() {
-    const results = [];
-    const rso = document.getElementById('rso');
-    let rank = 1;
-
-    if (rso) {
-      const organicBlocks = rso.querySelectorAll('div.MjjYud, div.g');
-      organicBlocks.forEach(function (block) {
-        if (block.closest('[data-text-ad], .uEierd, .related-question-pair, [data-initq], .g-blk')) return;
-
-        const h3 = block.querySelector('h3');
-        const link = block.querySelector('a[href^="http"]');
-        if (h3 && link) {
-          let domain = '';
-          try {
-            domain = new URL(link.href).hostname.replace(/^www\./, '');
-          } catch (e) {
-            domain = link.href;
-          }
-
-          results.push({
-            rank: rank++,
-            title: h3.textContent.trim(),
-            domain: domain,
-            url: link.href
-          });
-        }
-      });
-    }
-
-    const adsCount = document.querySelectorAll('[data-text-ad], .uEierd').length;
-    const hasLocal = document.querySelector('[data-local-pack], div.rllt__link, .VkpGBb') ? 1 : 0;
-
-    return { results: results, adsCount: adsCount, hasLocal: hasLocal };
-  }
-
-  function openExtractorModal() {
-    // Remove any existing modal
-    const existing = document.getElementById('location-gear-extractor-modal');
-    if (existing) existing.remove();
-
-    const data = extractSerpData();
-    const loc = activeLocation || { name: 'United States', flag: '🇺🇸', code: 'US' };
-
-    const modal = document.createElement('div');
-    modal.id = 'location-gear-extractor-modal';
-    modal.className = 'lg-modal-backdrop';
-
-    let tableRows = '';
-    data.results.forEach(function (row) {
-      tableRows += `
-        <tr>
-          <td class="lg-rank-col">#${row.rank}</td>
-          <td class="lg-title-col" title="${escapeHtml(row.title)}">${escapeHtml(row.title)}</td>
-          <td class="lg-domain-col">${escapeHtml(row.domain)}</td>
-          <td class="lg-url-col"><a href="${escapeHtml(row.url)}" target="_blank" rel="noopener">${escapeHtml(row.url)}</a></td>
-        </tr>
-      `;
-    });
-
-    modal.innerHTML = `
-      <div class="lg-extractor-card">
-        <div class="lg-extractor-header">
-          <div class="lg-extractor-title">
-            <span>📊</span>
-            <span>SERP Data Extractor • ${data.results.length} Results Captured (${loc.flag} ${loc.name})</span>
-          </div>
-          <button type="button" class="lg-extractor-close" id="lg-modal-close-btn">✕</button>
-        </div>
-
-        <div class="lg-extractor-summary">
-          <span><strong>${data.results.length}</strong> Organic Positions</span>
-          <span>•</span>
-          <span><strong>${data.adsCount}</strong> Ads Active</span>
-          <span>•</span>
-          <span><strong>${data.hasLocal}</strong> Local Pack</span>
-        </div>
-
-        <div class="lg-extractor-actions">
-          <button type="button" class="lg-btn-action-primary" id="lg-btn-copy-urls">
-            <span>📋 Copy All URLs to Clipboard</span>
-          </button>
-          <button type="button" class="lg-btn-action-secondary" id="lg-btn-download-csv">
-            <span>📥 Download Full CSV</span>
-          </button>
-        </div>
-
-        <div class="lg-extractor-table-wrap">
-          <table class="lg-extractor-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Page Title</th>
-                <th>Domain</th>
-                <th>Target URL</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows || '<tr><td colspan="4" style="text-align:center; padding: 20px; color:#70757a;">No organic rankings found</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Event Listeners for Extractor Modal
-    modal.querySelector('#lg-modal-close-btn').addEventListener('click', function () {
-      modal.remove();
-    });
-
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal) modal.remove();
-    });
-
-    // Copy All URLs
-    modal.querySelector('#lg-btn-copy-urls').addEventListener('click', function () {
-      const urls = data.results.map(r => r.url).join('\n');
-      navigator.clipboard.writeText(urls).then(function () {
-        const btn = modal.querySelector('#lg-btn-copy-urls');
-        btn.innerHTML = '<span>✓ Copied ' + data.results.length + ' URLs!</span>';
-        setTimeout(function () {
-          btn.innerHTML = '<span>📋 Copy All URLs to Clipboard</span>';
-        }, 2000);
-      });
-    });
-
-    // Download CSV
-    modal.querySelector('#lg-btn-download-csv').addEventListener('click', function () {
-      const query = new URL(window.location.href).searchParams.get('q') || 'search';
-      let csv = 'Rank,Title,Domain,URL\n';
-      data.results.forEach(function (r) {
-        const cleanTitle = `"${r.title.replace(/"/g, '""')}"`;
-        const cleanUrl = `"${r.url.replace(/"/g, '""')}"`;
-        csv += `${r.rank},${cleanTitle},${r.domain},${cleanUrl}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `location-gear-${loc.code}-${query.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-  }
-
-  // ========================================================
-  // Dual-SERP Split Comparison Overlay (50/50 View)
-  // ========================================================
-  function openDualCompareModal() {
-    const existing = document.getElementById('location-gear-compare-modal');
-    if (existing) existing.remove();
-
-    const currentLoc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸' };
-    const compareCode = currentLoc.code === 'US' ? 'GB' : 'US';
-    const compareLoc = findCountry(compareCode) || { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' };
-
-    const query = new URL(window.location.href).searchParams.get('q') || '';
-    const leftUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${currentLoc.code.toLowerCase()}&hl=en`;
-    const rightUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${compareLoc.code.toLowerCase()}&hl=en`;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'location-gear-compare-modal';
-    overlay.className = 'lg-compare-overlay';
-
-    overlay.innerHTML = `
-      <div class="lg-compare-header">
-        <div class="lg-compare-header-left">
-          <span style="font-size: 18px;">🌍</span>
-          <span class="lg-compare-title">Dual SERP Split View: "${escapeHtml(query)}"</span>
-        </div>
-
-        <div class="lg-compare-header-actions">
-          <button type="button" class="lg-compare-btn" id="lg-compare-swap-btn">
-            <span>🔄 Swap Countries</span>
-          </button>
-          <button type="button" class="lg-compare-btn primary" id="lg-compare-close-btn">
-            <span>✕ Close Split View</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="lg-compare-split-body">
-        <div class="lg-compare-pane left">
-          <div class="lg-compare-pane-header">
-            <span>[ ${currentLoc.flag} ${currentLoc.name} SERP ]</span>
-            <span style="font-weight: 500; color: #5f6368;">gl=${currentLoc.code.toLowerCase()}</span>
-          </div>
-          <iframe class="lg-compare-frame" id="lg-frame-left" src="${leftUrl}"></iframe>
-        </div>
-
-        <div class="lg-compare-divider-badge">⇄</div>
-
-        <div class="lg-compare-pane right">
-          <div class="lg-compare-pane-header">
-            <span>[ ${compareLoc.flag} ${compareLoc.name} SERP ]</span>
-            <span style="font-weight: 500; color: #5f6368;">gl=${compareLoc.code.toLowerCase()}</span>
-          </div>
-          <iframe class="lg-compare-frame" id="lg-frame-right" src="${rightUrl}"></iframe>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#lg-compare-close-btn').addEventListener('click', function () {
-      overlay.remove();
-    });
-
-    overlay.querySelector('#lg-compare-swap-btn').addEventListener('click', function () {
-      const leftFrame = overlay.querySelector('#lg-frame-left');
-      const rightFrame = overlay.querySelector('#lg-frame-right');
-      const tempSrc = leftFrame.src;
-      leftFrame.src = rightFrame.src;
-      rightFrame.src = tempSrc;
-    });
-
-    // Close on Escape
-    const escHandler = function (e) {
-      if (e.key === 'Escape') {
-        overlay.remove();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
-  }
-
-  // ========================================================
-  // Compact Badge Under Camera
-  // ========================================================
+  // Inject Badge Under Camera
   function injectBadgeUnderCamera() {
     if (document.getElementById('location-gear-wrapper')) {
       alignWithCamera();
@@ -584,12 +164,18 @@
 
   function renderBadgeHTML(wrapper) {
     const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1 };
+    const isDark = isGoogleDarkMode();
+    if (isDark) {
+      wrapper.classList.add('lg-dark');
+    } else {
+      wrapper.classList.remove('lg-dark');
+    }
 
     let quickPillsHtml = '';
     DEFAULT_QUICK_PILLS.forEach(function (code) {
       const c = findCountry(code);
       if (c) {
-        const isActive = c.code === loc.code;
+        const isActive = locationEnabled && c.code === loc.code;
         quickPillsHtml += `
           <button type="button" class="lg-quick-btn ${isActive ? 'active' : ''}" data-code="${c.code}">
             <span>${c.flag}</span>
@@ -613,23 +199,42 @@
     });
 
     wrapper.innerHTML = `
-      <button type="button" id="location-gear-badge" title="SERP Location: ${loc.name} (${loc.code}) - Press Alt+L to change">
-        <span class="lg-badge-flag">${loc.flag || '🌐'}</span>
+      <!-- Compact Badge directly under Camera Icon -->
+      <button type="button" id="location-gear-badge" title="SERP Location: ${locationEnabled ? loc.name : 'Real Location (OFF)'} - Click to switch or press Alt+L">
+        <span class="lg-badge-flag">${locationEnabled ? (loc.flag || '🌐') : '⚪'}</span>
         <span class="lg-badge-code">${locationEnabled ? loc.code : 'OFF'}</span>
         <span class="lg-badge-arrow">▾</span>
       </button>
 
-      <div id="location-gear-dropdown">
+      <!-- Dropdown Menu -->
+      <div id="location-gear-dropdown" class="${isDark ? 'lg-dark' : ''}">
         <div class="lg-dropdown-header">
           <input type="text" class="lg-search-box" id="lg-search-input" placeholder="🔍 Search country, code, city, or ZIP..." autocomplete="off">
         </div>
 
+        <!-- Master Actions Bar -->
+        <div class="lg-actions-bar">
+          <button type="button" class="lg-btn-reset ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="Turn off spoofing and restore your real physical location">
+            <span>${locationEnabled ? '⏻ Reset to Real Location' : '✓ Turn On Spoofing'}</span>
+          </button>
+          <button type="button" class="lg-action-chip ${isTop100 ? 'active' : ''}" id="lg-btn-toggle-top100" title="Toggle 100 Search Results per Page">
+            <span>⚡ 100 Results</span>
+          </button>
+          <button type="button" class="lg-action-chip" id="lg-btn-open-extractor" title="Extract all organic ranking URLs to CSV or Clipboard">
+            <span>📥 Export CSV</span>
+          </button>
+          <button type="button" class="lg-action-chip" id="lg-btn-open-compare" title="Compare side-by-side with another country">
+            <span>📊 Compare</span>
+          </button>
+        </div>
+
+        <!-- Settings Bar -->
         <div class="lg-settings-bar">
           <label class="lg-toggle-item" title="Forces Google UI to stay in English (hl=en)">
             <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-lang" ${languageLock ? 'checked' : ''}>
             <span>Keep English UI</span>
           </label>
-          <span style="font-size: 11px; color: #188038; font-weight: 600;">✓ 0 CAPTCHAs</span>
+          <span class="lg-badge-guarantee">🛡️ Zero CAPTCHAs</span>
         </div>
 
         ${recentCodes.length > 0 ? `
@@ -661,6 +266,12 @@
     `;
 
     renderCountryList();
+  }
+
+  function isGoogleDarkMode() {
+    const bg = window.getComputedStyle(document.body).backgroundColor;
+    if (bg && (bg.includes('32, 33, 36') || bg.includes('31, 31, 31') || bg.includes('48, 49, 52'))) return true;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   function renderCountryList() {
@@ -698,7 +309,7 @@
     }
 
     filtered.forEach(function (c) {
-      const isSelected = activeLocation && activeLocation.code === c.code;
+      const isSelected = locationEnabled && activeLocation && activeLocation.code === c.code;
       const hasCities = c.cities && c.cities.length > 0;
 
       html += `
@@ -736,11 +347,74 @@
     const searchInput = wrapper.querySelector('#lg-search-input');
     const toggleLang = wrapper.querySelector('#lg-toggle-lang');
 
+    // Badge click
     badge.addEventListener('click', function (e) {
       e.stopPropagation();
       toggleDropdown();
     });
 
+    // Reset to Real Location button (Courtland Gaba review fix)
+    const resetBtn = wrapper.querySelector('#lg-btn-reset-home');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        locationEnabled = !locationEnabled;
+        chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
+          if (!locationEnabled) {
+            chrome.runtime.sendMessage({ action: 'RESET_TO_HOME' });
+            const url = new URL(window.location.href);
+            url.searchParams.delete('gl');
+            url.searchParams.delete('uule');
+            url.searchParams.delete('cr');
+            url.searchParams.delete('pws');
+            if (url.searchParams.get('num') === '100') url.searchParams.delete('num');
+            window.location.href = url.toString();
+          } else {
+            applyLocation(activeLocation);
+          }
+        });
+      });
+    }
+
+    // Toggle 100 Results button
+    const top100Btn = wrapper.querySelector('#lg-btn-toggle-top100');
+    if (top100Btn) {
+      top100Btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        isTop100 = !isTop100;
+        chrome.storage.local.set({ top100: isTop100 }, function () {
+          const url = new URL(window.location.href);
+          if (isTop100) {
+            url.searchParams.set('num', '100');
+          } else {
+            url.searchParams.delete('num');
+          }
+          window.location.href = url.toString();
+        });
+      });
+    }
+
+    // Open Extractor Modal
+    const extractorBtn = wrapper.querySelector('#lg-btn-open-extractor');
+    if (extractorBtn) {
+      extractorBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeDropdown();
+        openExtractorModal();
+      });
+    }
+
+    // Open Compare Modal
+    const compareBtn = wrapper.querySelector('#lg-btn-open-compare');
+    if (compareBtn) {
+      compareBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeDropdown();
+        openDualCompareModal();
+      });
+    }
+
+    // Language Lock toggle
     if (toggleLang) {
       toggleLang.addEventListener('change', function () {
         languageLock = toggleLang.checked;
@@ -748,6 +422,7 @@
       });
     }
 
+    // Close on outside click
     document.addEventListener('click', function (e) {
       if (isDropdownOpen && !wrapper.contains(e.target)) {
         closeDropdown();
@@ -783,6 +458,7 @@
       });
     }
 
+    // Tier Tabs
     wrapper.querySelectorAll('.lg-tier-tab').forEach(function (tab) {
       tab.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -793,6 +469,7 @@
       });
     });
 
+    // Quick Pills & Recent Chips
     wrapper.addEventListener('click', function (e) {
       const pill = e.target.closest('.lg-quick-btn, .lg-recent-chip');
       if (pill) {
@@ -803,6 +480,7 @@
       }
     });
 
+    // Country List selection
     const listEl = wrapper.querySelector('#lg-country-list');
     if (listEl) {
       listEl.addEventListener('click', function (e) {
@@ -1038,6 +716,234 @@
     });
   }
 
+  // ========================================================
+  // 1-Click SERP Extractor Modal
+  // ========================================================
+  function extractSerpData() {
+    const results = [];
+    const rso = document.getElementById('rso');
+    let rank = 1;
+
+    if (rso) {
+      const organicBlocks = rso.querySelectorAll('div.MjjYud, div.g');
+      organicBlocks.forEach(function (block) {
+        if (block.closest('[data-text-ad], .uEierd, .related-question-pair, [data-initq], .g-blk')) return;
+
+        const h3 = block.querySelector('h3');
+        const link = block.querySelector('a[href^="http"]');
+        if (h3 && link) {
+          let domain = '';
+          try {
+            domain = new URL(link.href).hostname.replace(/^www\./, '');
+          } catch (e) {
+            domain = link.href;
+          }
+
+          results.push({
+            rank: rank++,
+            title: h3.textContent.trim(),
+            domain: domain,
+            url: link.href
+          });
+        }
+      });
+    }
+
+    const adsCount = document.querySelectorAll('[data-text-ad], .uEierd').length;
+    const hasLocal = document.querySelector('[data-local-pack], div.rllt__link, .VkpGBb') ? 1 : 0;
+
+    return { results: results, adsCount: adsCount, hasLocal: hasLocal };
+  }
+
+  function openExtractorModal() {
+    const existing = document.getElementById('location-gear-extractor-modal');
+    if (existing) existing.remove();
+
+    const data = extractSerpData();
+    const loc = activeLocation || { name: 'United States', flag: '🇺🇸', code: 'US' };
+    const isDark = isGoogleDarkMode();
+
+    const modal = document.createElement('div');
+    modal.id = 'location-gear-extractor-modal';
+    modal.className = 'lg-modal-backdrop';
+
+    let tableRows = '';
+    data.results.forEach(function (row) {
+      tableRows += `
+        <tr>
+          <td class="lg-rank-col">#${row.rank}</td>
+          <td class="lg-title-col" title="${escapeHtml(row.title)}">${escapeHtml(row.title)}</td>
+          <td class="lg-domain-col">${escapeHtml(row.domain)}</td>
+          <td class="lg-url-col"><a href="${escapeHtml(row.url)}" target="_blank" rel="noopener">${escapeHtml(row.url)}</a></td>
+        </tr>
+      `;
+    });
+
+    modal.innerHTML = `
+      <div class="lg-extractor-card ${isDark ? 'lg-dark' : ''}">
+        <div class="lg-extractor-header">
+          <div class="lg-extractor-title">
+            <span>📊</span>
+            <span>SERP Data Extractor • ${data.results.length} Results (${loc.flag} ${loc.name})</span>
+          </div>
+          <button type="button" class="lg-extractor-close" id="lg-modal-close-btn">✕</button>
+        </div>
+
+        <div class="lg-extractor-summary">
+          <span><strong>${data.results.length}</strong> Organic Positions</span>
+          <span>•</span>
+          <span><strong>${data.adsCount}</strong> Ads</span>
+          <span>•</span>
+          <span><strong>${data.hasLocal}</strong> Local Pack</span>
+        </div>
+
+        <div class="lg-extractor-actions">
+          <button type="button" class="lg-btn-action-primary" id="lg-btn-copy-urls">
+            <span>📋 Copy All URLs</span>
+          </button>
+          <button type="button" class="lg-btn-action-secondary" id="lg-btn-download-csv">
+            <span>📥 Download CSV</span>
+          </button>
+        </div>
+
+        <div class="lg-extractor-table-wrap">
+          <table class="lg-extractor-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Page Title</th>
+                <th>Domain</th>
+                <th>Target URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || '<tr><td colspan="4" style="text-align:center; padding: 20px; color:#70757a;">No organic rankings found</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('#lg-modal-close-btn').addEventListener('click', function () {
+      modal.remove();
+    });
+
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.remove();
+    });
+
+    modal.querySelector('#lg-btn-copy-urls').addEventListener('click', function () {
+      const urls = data.results.map(r => r.url).join('\n');
+      navigator.clipboard.writeText(urls).then(function () {
+        const btn = modal.querySelector('#lg-btn-copy-urls');
+        btn.innerHTML = '<span>✓ Copied ' + data.results.length + ' URLs!</span>';
+        setTimeout(function () {
+          btn.innerHTML = '<span>📋 Copy All URLs</span>';
+        }, 2000);
+      });
+    });
+
+    modal.querySelector('#lg-btn-download-csv').addEventListener('click', function () {
+      const query = new URL(window.location.href).searchParams.get('q') || 'search';
+      let csv = 'Rank,Title,Domain,URL\n';
+      data.results.forEach(function (r) {
+        const cleanTitle = `"${r.title.replace(/"/g, '""')}"`;
+        const cleanUrl = `"${r.url.replace(/"/g, '""')}"`;
+        csv += `${r.rank},${cleanTitle},${r.domain},${cleanUrl}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `location-gear-${loc.code}-${query.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
+  // ========================================================
+  // Dual-SERP Split Comparison Overlay
+  // ========================================================
+  function openDualCompareModal() {
+    const existing = document.getElementById('location-gear-compare-modal');
+    if (existing) existing.remove();
+
+    const currentLoc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸' };
+    const compareCode = currentLoc.code === 'US' ? 'GB' : 'US';
+    const compareLoc = findCountry(compareCode) || { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' };
+
+    const query = new URL(window.location.href).searchParams.get('q') || '';
+    const leftUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${currentLoc.code.toLowerCase()}&hl=en`;
+    const rightUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${compareLoc.code.toLowerCase()}&hl=en`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'location-gear-compare-modal';
+    overlay.className = 'lg-compare-overlay';
+
+    overlay.innerHTML = `
+      <div class="lg-compare-header">
+        <div class="lg-compare-header-left">
+          <span style="font-size: 18px;">🌍</span>
+          <span class="lg-compare-title">Dual SERP Split View: "${escapeHtml(query)}"</span>
+        </div>
+
+        <div class="lg-compare-header-actions">
+          <button type="button" class="lg-compare-btn" id="lg-compare-swap-btn">
+            <span>🔄 Swap Countries</span>
+          </button>
+          <button type="button" class="lg-compare-btn primary" id="lg-compare-close-btn">
+            <span>✕ Close Split View</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="lg-compare-split-body">
+        <div class="lg-compare-pane left">
+          <div class="lg-compare-pane-header">
+            <span>[ ${currentLoc.flag} ${currentLoc.name} SERP ]</span>
+            <span style="font-weight: 500; color: #5f6368;">gl=${currentLoc.code.toLowerCase()}</span>
+          </div>
+          <iframe class="lg-compare-frame" id="lg-frame-left" src="${leftUrl}"></iframe>
+        </div>
+
+        <div class="lg-compare-divider-badge">⇄</div>
+
+        <div class="lg-compare-pane right">
+          <div class="lg-compare-pane-header">
+            <span>[ ${compareLoc.flag} ${compareLoc.name} SERP ]</span>
+            <span style="font-weight: 500; color: #5f6368;">gl=${compareLoc.code.toLowerCase()}</span>
+          </div>
+          <iframe class="lg-compare-frame" id="lg-frame-right" src="${rightUrl}"></iframe>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#lg-compare-close-btn').addEventListener('click', function () {
+      overlay.remove();
+    });
+
+    overlay.querySelector('#lg-compare-swap-btn').addEventListener('click', function () {
+      const leftFrame = overlay.querySelector('#lg-frame-left');
+      const rightFrame = overlay.querySelector('#lg-frame-right');
+      const tempSrc = leftFrame.src;
+      leftFrame.src = rightFrame.src;
+      rightFrame.src = tempSrc;
+    });
+
+    const escHandler = function (e) {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1052,11 +958,6 @@
         alignWithCamera();
       }
 
-      if (!document.getElementById('location-gear-dock')) {
-        injectInSerpDock();
-      }
-
-      tagOrganicRanks();
       hookSearchForms();
 
       if (window.location.href !== lastUrl) {
@@ -1064,8 +965,6 @@
         loadSettings(function () {
           const wrapper = document.getElementById('location-gear-wrapper');
           if (wrapper) renderBadgeHTML(wrapper);
-          updateDockUI();
-          tagOrganicRanks();
           alignWithCamera();
           hookSearchForms();
         });
