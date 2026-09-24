@@ -211,6 +211,9 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.classList.add('active');
       activeTierFilter = btn.getAttribute('data-tier');
       renderList();
+      if (listEl && listEl.parentElement) {
+        listEl.parentElement.scrollTop = 0;
+      }
     });
   });
 

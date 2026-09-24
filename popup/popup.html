@@ -59,12 +59,14 @@
     <input type="text" id="popup-search" placeholder="🔍 Search 196 countries, codes, cities..." autocomplete="off">
   </div>
 
-  <!-- Tier Filter Tabs -->
-  <div class="tabs">
-    <button type="button" class="tab-btn active" data-tier="all">All (196)</button>
-    <button type="button" class="tab-btn" data-tier="1">Tier 1 (24)</button>
-    <button type="button" class="tab-btn" data-tier="2">Tier 2 (36)</button>
-    <button type="button" class="tab-btn" data-tier="3">Tier 3 (136)</button>
+  <!-- Tier Filter Tabs (Segmented Control) -->
+  <div class="tabs-wrapper">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-tier="all">All (196)</button>
+      <button type="button" class="tab-btn" data-tier="1">Tier 1 (24)</button>
+      <button type="button" class="tab-btn" data-tier="2">Tier 2 (36)</button>
+      <button type="button" class="tab-btn" data-tier="3">Tier 3 (136)</button>
+    </div>
   </div>
 
   <!-- Scrollable Country List -->
