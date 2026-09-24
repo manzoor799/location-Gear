@@ -1,10 +1,11 @@
 /**
- * Location Gear - Matching Extension Popup UI/UX Styling
- * Transformed from dark/black background to the clean, crisp white and Google-blue
- * aesthetic matching the extension's toolbar popup.
+ * Location Gear - SERP Styling (In-SERP Dock, Extractor Modal & Dual Compare)
+ * Designed to feel like a native Google tool with clean Material 3 aesthetics.
  */
 
-/* Wrapper anchored directly under the search box */
+/* ========================================================
+   1. Compact Badge Anchored Under Google Camera
+   ======================================================== */
 #location-gear-wrapper {
   position: absolute;
   top: calc(100% + 6px);
@@ -15,7 +16,6 @@
   line-height: 1;
 }
 
-/* Compact Badge Below Camera */
 #location-gear-badge {
   display: inline-flex;
   align-items: center;
@@ -74,7 +74,7 @@
 }
 
 /* ========================================================
-   Dropdown Menu Modal (Matches Extension Popup UI/UX)
+   2. Dropdown Menu Modal
    ======================================================== */
 #location-gear-dropdown {
   position: absolute;
@@ -105,7 +105,6 @@
   display: flex;
 }
 
-/* Search Box Header */
 .lg-dropdown-header {
   padding: 12px 14px 8px 14px;
   background: #ffffff;
@@ -134,7 +133,6 @@
   color: #70757a;
 }
 
-/* Settings Bar (Language Lock & Strict Local) */
 .lg-settings-bar {
   display: flex;
   align-items: center;
@@ -190,7 +188,6 @@
   font-weight: 800;
 }
 
-/* Recents Bar */
 .lg-recents-section {
   display: flex;
   align-items: center;
@@ -233,7 +230,6 @@
   color: #1a73e8;
 }
 
-/* Custom Location Item */
 .lg-custom-location-item {
   display: flex;
   align-items: center;
@@ -254,7 +250,6 @@
   color: #1557b0;
 }
 
-/* Quick Top Markets */
 .lg-quick-section {
   display: flex;
   align-items: center;
@@ -294,7 +289,6 @@
   font-weight: 600;
 }
 
-/* Tier Tabs */
 .lg-tier-tabs {
   display: flex;
   gap: 6px;
@@ -329,7 +323,6 @@
   font-weight: 600;
 }
 
-/* Country List */
 .lg-country-list {
   max-height: 240px;
   overflow-y: auto;
@@ -384,7 +377,6 @@
   gap: 6px;
 }
 
-/* Tier Badges (Clean Soft Colors Matching Popup) */
 .lg-tier-badge {
   font-size: 10px;
   padding: 2px 6px;
@@ -408,7 +400,6 @@
   color: #b06000;
 }
 
-/* City Sub-list */
 .lg-city-btn {
   font-size: 10px;
   background: transparent;
@@ -450,7 +441,6 @@
   border-color: #1a73e8;
 }
 
-/* Dropdown Footer */
 .lg-dropdown-footer {
   display: flex;
   align-items: center;
@@ -474,4 +464,528 @@
 .lg-shortcut-hint {
   font-size: 10px;
   color: #80868b;
+}
+
+/* ========================================================
+   3. Native In-SERP Control Dock (Live Google Search Bar)
+   ======================================================== */
+#location-gear-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 14px 0;
+  padding: 6px 14px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 24px;
+  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #202124;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  z-index: 1000;
+  position: relative;
+}
+
+#location-gear-dock::-webkit-scrollbar {
+  display: none;
+}
+
+.lg-dock-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.lg-dock-brand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a73e8;
+  padding-right: 8px;
+  border-right: 1px solid #dadce0;
+}
+
+.lg-dock-logo {
+  font-size: 14px;
+}
+
+.lg-dock-country-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a73e8;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.lg-dock-country-btn:hover {
+  background: #d2e3fc;
+  border-color: #1a73e8;
+}
+
+.lg-dock-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lg-dock-arrow {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.lg-dock-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lg-dock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.lg-dock-chip:hover {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.lg-dock-chip.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #ffffff;
+}
+
+.lg-dock-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lg-dock-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.lg-dock-action-btn:hover {
+  background: #f8f9fa;
+  border-color: #bdc1c6;
+  color: #202124;
+}
+
+.lg-dock-action-btn.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.lg-dock-reset-btn {
+  background: #fce8e6;
+  border-color: #fad2cf;
+  color: #c5221f;
+}
+
+.lg-dock-reset-btn:hover {
+  background: #ea4335;
+  border-color: #ea4335;
+  color: #ffffff;
+}
+
+.lg-dock-status {
+  font-size: 10px;
+  color: #137333;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+}
+
+/* ========================================================
+   4. Organic Search Ranking Badges (#1, #2, #3...)
+   ======================================================== */
+.lg-serp-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 5px;
+  margin-right: 8px;
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a73e8;
+  vertical-align: middle;
+  box-shadow: 0 1px 2px rgba(26, 115, 232, 0.12);
+  user-select: none;
+}
+
+/* ========================================================
+   5. 1-Click SERP Extractor Modal
+   ======================================================== */
+.lg-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(32, 33, 36, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: lgFadeIn 0.15s ease;
+}
+
+.lg-extractor-card {
+  width: 680px;
+  max-width: 94vw;
+  max-height: 85vh;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #202124;
+}
+
+.lg-extractor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.lg-extractor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.lg-extractor-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.lg-extractor-close:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.lg-extractor-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: #e8f0fe;
+  border-bottom: 1px solid #d2e3fc;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1967d2;
+}
+
+.lg-extractor-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.lg-btn-action-primary {
+  flex: 1;
+  padding: 9px 14px;
+  background: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.lg-btn-action-primary:hover {
+  background: #1557b0;
+}
+
+.lg-btn-action-secondary {
+  flex: 1;
+  padding: 9px 14px;
+  background: #188038;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.lg-btn-action-secondary:hover {
+  background: #137333;
+}
+
+.lg-extractor-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.lg-extractor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.lg-extractor-table th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #5f6368;
+  border-bottom: 1px solid #dadce0;
+}
+
+.lg-extractor-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
+}
+
+.lg-extractor-table tr:hover {
+  background: #f8fafd;
+}
+
+.lg-rank-col {
+  font-weight: 700;
+  color: #1a73e8;
+  width: 50px;
+}
+
+.lg-title-col {
+  font-weight: 500;
+  color: #202124;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lg-domain-col {
+  color: #5f6368;
+  width: 120px;
+}
+
+.lg-url-col a {
+  color: #1a73e8;
+  text-decoration: none;
+  display: block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lg-url-col a:hover {
+  text-decoration: underline;
+}
+
+/* ========================================================
+   6. Dual-SERP Split Comparison Overlay
+   ======================================================== */
+.lg-compare-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  z-index: 99999999;
+  display: flex;
+  flex-direction: column;
+}
+
+.lg-compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dadce0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.lg-compare-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lg-compare-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.lg-compare-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-compare-btn {
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.lg-compare-btn:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+.lg-compare-btn.primary {
+  background: #1a73e8;
+  color: #ffffff;
+  border-color: #1a73e8;
+}
+
+.lg-compare-btn.primary:hover {
+  background: #1557b0;
+}
+
+.lg-compare-split-body {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.lg-compare-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lg-compare-pane.left {
+  border-right: 1px solid #dadce0;
+}
+
+.lg-compare-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #f1f3f4;
+  border-bottom: 1px solid #e8eaed;
+  font-size: 12px;
+  font-weight: 700;
+  color: #202124;
+}
+
+.lg-compare-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+.lg-compare-divider-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #1a73e8;
+  z-index: 10;
+  pointer-events: none;
 }

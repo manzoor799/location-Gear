@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Location Gear - SERP & Maps Region Switcher",
-  "version": "1.0.0",
-  "description": "100% accurate Google SERP & Maps region switcher with Tier 1, Tier 2, and Tier 3 worldwide country support placed right below the search bar.",
+  "version": "1.1.0",
+  "description": "100% accurate Google SERP & Maps region switcher with Native In-SERP Dock, 1-Click CSV URL Extractor, Dual Split Compare, and Top 100 toggle.",
   "permissions": [
     "storage",
     "webNavigation"

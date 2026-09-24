@@ -1,13 +1,17 @@
 /**
- * Location Gear - SERP Content Script (Enhanced Edition)
- * Positions badge directly beneath Google's Camera (Lens) icon.
+ * Location Gear - SERP Content Script (Review-Backed Complete Edition)
+ * 
  * Features:
- * - Language Lock (Keep English UI hl=en vs Native language)
- * - Strict Country Filter (cr=countryXX)
- * - Custom ZIP / Postal Code & City Hyper-Local Mode
- * - Recent Locations History
- * - Keyboard Shortcut: Alt + L (or Option + L on Mac)
- * - Full Arrow Key & Enter Navigation
+ * 1. Native In-SERP Control Dock (Right under Google Search Tabs)
+ * 2. Compact Badge directly below Google's Camera (Lens) icon
+ * 3. 1-Click "Back to Real Location" Reset Button (Solves Courtland Gaba review)
+ * 4. Automatic Organic Rank Badges (#1, #2, #3...)
+ * 5. 1-Click SERP Data Extractor Modal (CSV Export & Clipboard Copy)
+ * 6. Dual-SERP Split Comparison Mode (50/50 US vs UK View)
+ * 7. 1-Tap Quick Select Favorite Chips (US, UK, CA, AU, DE)
+ * 8. Top 100 Results Toggle (num=100)
+ * 9. Safe Language Lock (hl=en)
+ * 10. Zero CAPTCHA & Zero 403 gl-only engine
  */
 
 (function () {
@@ -18,25 +22,27 @@
 
   const data = window.LocationGearData || {};
   const COUNTRIES = data.COUNTRIES || [];
-  const generateUule = data.generateUule || function () { return ''; };
   const findCountry = data.findCountry || function () { return null; };
   const getTimezone = data.getTimezone || function () { return 'UTC'; };
   const getNativeLanguage = data.getNativeLanguage || function () { return 'en'; };
   const DEFAULT_QUICK_PILLS = data.DEFAULT_QUICK_PILLS || ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'SA', 'AE', 'JP', 'BR', 'IN'];
 
   let activeLocation = null;
+  let locationEnabled = true;
+  let isTop100 = false;
+  let languageLock = true;
+  let favoriteCodes = ['US', 'GB', 'CA', 'AU', 'DE'];
+  let recentCodes = ['US', 'CA', 'GB', 'FR'];
   let activeTierFilter = 'all';
   let searchQuery = '';
   let isDropdownOpen = false;
-  let selectedIndex = -1; // for arrow key navigation
-
-  // User Settings
-  let languageLock = true;        // Default: Keep English UI (hl=en)
-  let recentCodes = ['US', 'CA', 'GB', 'FR'];
+  let selectedIndex = -1;
 
   function init() {
     loadSettings(function () {
       injectBadgeUnderCamera();
+      injectInSerpDock();
+      tagOrganicRanks();
       hookSearchForms();
       setupMutationObserver();
       setupKeyboardShortcuts();
@@ -44,20 +50,26 @@
     });
   }
 
-  // Load active location and settings from storage (Never overwrite with page defaults!)
+  // Load active location and settings from storage
   function loadSettings(callback) {
     const url = new URL(window.location.href);
 
-    // Clean up any legacy strictLocalFilter from storage to prevent 403 blocks
     chrome.storage.local.remove('strictLocalFilter');
 
-    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'recentCodes'], function (res) {
+    chrome.storage.local.get([
+      'activeLocation',
+      'locationEnabled',
+      'languageLock',
+      'recentCodes',
+      'favoriteCodes',
+      'top100'
+    ], function (res) {
       if (res.languageLock !== undefined) languageLock = res.languageLock;
-      if (Array.isArray(res.recentCodes) && res.recentCodes.length > 0) {
-        recentCodes = res.recentCodes;
-      }
+      if (res.locationEnabled !== undefined) locationEnabled = res.locationEnabled;
+      if (res.top100 !== undefined) isTop100 = res.top100;
+      if (Array.isArray(res.recentCodes) && res.recentCodes.length > 0) recentCodes = res.recentCodes;
+      if (Array.isArray(res.favoriteCodes) && res.favoriteCodes.length > 0) favoriteCodes = res.favoriteCodes;
 
-      // User's saved active location is the single source of truth!
       if (res.activeLocation && res.activeLocation.code) {
         activeLocation = res.activeLocation;
       } else {
@@ -65,11 +77,13 @@
         chrome.storage.local.set({ activeLocation: activeLocation });
       }
 
-      // Auto-enforce active location on search pages if missing, mismatched, or corrupted with uule/pws/cr/ctxt
-      if (res.locationEnabled !== false && url.pathname === '/search' && url.searchParams.has('q')) {
+      // Auto-enforce active location on search pages if enabled
+      if (locationEnabled && url.pathname === '/search' && url.searchParams.has('q')) {
         const currentGl = url.searchParams.get('gl');
         const currentHl = url.searchParams.get('hl');
+        const currentNum = url.searchParams.get('num');
         const targetCode = activeLocation.code.toLowerCase();
+
         const hasUule = url.searchParams.has('uule');
         const hasPws = url.searchParams.has('pws');
         const hasCr = url.searchParams.has('cr');
@@ -78,8 +92,9 @@
 
         const glMismatched = !currentGl || currentGl.toLowerCase() !== targetCode;
         const hlMismatched = languageLock && currentHl !== 'en';
+        const numMismatched = isTop100 && currentNum !== '100';
 
-        if (glMismatched || hlMismatched || hasUule || hasPws || hasCr || hasContextSource || hasDoubleAmp) {
+        if (glMismatched || hlMismatched || numMismatched || hasUule || hasPws || hasCr || hasContextSource || hasDoubleAmp) {
           applyLocation(activeLocation);
           return;
         }
@@ -89,7 +104,7 @@
     });
   }
 
-  // Find Google Search Pill Box (div.RNNXgb) or Search Form
+  // Find Google Search Box
   function findSearchBox() {
     return document.querySelector('div.RNNXgb') 
         || document.querySelector('div.A8SBwf') 
@@ -97,7 +112,7 @@
         || document.querySelector('form[role="search"]');
   }
 
-  // Find the Camera (Lens) icon inside the search bar
+  // Find Camera / Lens icon
   function findCameraIcon() {
     return document.querySelector('div[aria-label*="image" i]')
         || document.querySelector('div[aria-label*="Lens" i]')
@@ -107,7 +122,424 @@
         || document.querySelector('div.dRYYxd');
   }
 
-  // Inject the badge wrapper directly anchored to the search box
+  // ========================================================
+  // In-SERP Control Dock
+  // ========================================================
+  function injectInSerpDock() {
+    if (document.getElementById('location-gear-dock')) {
+      updateDockUI();
+      return;
+    }
+
+    // Anchor dock above results
+    const targetContainer = document.getElementById('center_col') 
+                         || document.getElementById('rcnt') 
+                         || document.querySelector('div.GyAeWb') 
+                         || document.getElementById('searchform');
+    if (!targetContainer) return;
+
+    const dock = document.createElement('div');
+    dock.id = 'location-gear-dock';
+
+    targetContainer.parentNode.insertBefore(dock, targetContainer);
+    renderDockHTML(dock);
+    setupDockListeners(dock);
+  }
+
+  function renderDockHTML(dock) {
+    const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1 };
+    const currentNum = new URL(window.location.href).searchParams.get('num');
+    const top100Active = isTop100 || currentNum === '100';
+
+    let chipsHtml = '';
+    favoriteCodes.slice(0, 5).forEach(function (code) {
+      const c = findCountry(code);
+      if (c) {
+        const isActive = locationEnabled && c.code === loc.code;
+        chipsHtml += `
+          <button type="button" class="lg-dock-chip ${isActive ? 'active' : ''}" data-code="${c.code}" title="${c.name}">
+            <span>${c.flag}</span>
+            <span>${c.code}</span>
+          </button>
+        `;
+      }
+    });
+
+    dock.innerHTML = `
+      <div class="lg-dock-left">
+        <div class="lg-dock-brand" title="Location Gear SERP Switcher">
+          <span class="lg-dock-logo">🌍</span>
+          <span class="lg-dock-name">Location Gear</span>
+        </div>
+
+        <button type="button" class="lg-dock-country-btn" id="lg-dock-country-btn" title="Click to change target country">
+          <span class="lg-dock-flag">${loc.flag}</span>
+          <span class="lg-dock-country-name">${locationEnabled ? loc.name : 'Real Location (Default)'}</span>
+          <span class="lg-dock-arrow">▾</span>
+        </button>
+
+        <div class="lg-dock-chips">
+          ${chipsHtml}
+        </div>
+      </div>
+
+      <div class="lg-dock-right">
+        <button type="button" class="lg-dock-action-btn ${top100Active ? 'active' : ''}" id="lg-dock-top100-btn" title="Toggle 100 Search Results per Page (num=100)">
+          <span>⚡ Top 100</span>
+        </button>
+
+        <button type="button" class="lg-dock-action-btn" id="lg-dock-compare-btn" title="Compare side-by-side with another country">
+          <span>📊 Dual Compare</span>
+        </button>
+
+        <button type="button" class="lg-dock-action-btn" id="lg-dock-export-btn" title="Extract and Export organic rankings to CSV / Clipboard">
+          <span>📥 Export CSV</span>
+        </button>
+
+        <button type="button" class="lg-dock-action-btn lg-dock-reset-btn" id="lg-dock-reset-btn" title="Turn off spoofing and restore your real location">
+          <span>🔄 Reset to Home</span>
+        </button>
+
+        <span class="lg-dock-status">✓ 0 CAPTCHAs</span>
+      </div>
+    `;
+  }
+
+  function updateDockUI() {
+    const dock = document.getElementById('location-gear-dock');
+    if (dock) renderDockHTML(dock);
+  }
+
+  function setupDockListeners(dock) {
+    dock.addEventListener('click', function (e) {
+      // 1. Country button click -> opens dropdown
+      if (e.target.closest('#lg-dock-country-btn')) {
+        toggleDropdown();
+        return;
+      }
+
+      // 2. Favorite chip click -> switch country instantly
+      const chip = e.target.closest('.lg-dock-chip');
+      if (chip) {
+        const code = chip.getAttribute('data-code');
+        const country = findCountry(code);
+        if (country) applyLocation(country);
+        return;
+      }
+
+      // 3. Top 100 Toggle
+      if (e.target.closest('#lg-dock-top100-btn')) {
+        isTop100 = !isTop100;
+        chrome.storage.local.set({ top100: isTop100 }, function () {
+          const url = new URL(window.location.href);
+          if (isTop100) {
+            url.searchParams.set('num', '100');
+          } else {
+            url.searchParams.delete('num');
+          }
+          window.location.href = url.toString();
+        });
+        return;
+      }
+
+      // 4. Dual Compare
+      if (e.target.closest('#lg-dock-compare-btn')) {
+        openDualCompareModal();
+        return;
+      }
+
+      // 5. Export CSV
+      if (e.target.closest('#lg-dock-export-btn')) {
+        openExtractorModal();
+        return;
+      }
+
+      // 6. Reset to Home (Courtland Gaba review fix!)
+      if (e.target.closest('#lg-dock-reset-btn')) {
+        resetToRealLocation();
+        return;
+      }
+    });
+  }
+
+  // ========================================================
+  // 1-Click Master Reset to Real Location
+  // ========================================================
+  function resetToRealLocation() {
+    chrome.storage.local.set({ locationEnabled: false }, function () {
+      chrome.runtime.sendMessage({ action: 'RESET_TO_HOME' });
+      const url = new URL(window.location.href);
+      url.searchParams.delete('gl');
+      url.searchParams.delete('uule');
+      url.searchParams.delete('cr');
+      url.searchParams.delete('pws');
+      if (url.searchParams.get('num') === '100') {
+        url.searchParams.delete('num');
+      }
+      window.location.href = url.toString();
+    });
+  }
+
+  // ========================================================
+  // Organic Ranking Badges (#1, #2, #3...)
+  // ========================================================
+  function tagOrganicRanks() {
+    const rso = document.getElementById('rso');
+    if (!rso) return;
+
+    const organicBlocks = rso.querySelectorAll('div.MjjYud, div.g');
+    let rank = 1;
+
+    organicBlocks.forEach(function (block) {
+      // Exclude ads, people also ask, images, and videos
+      if (block.closest('[data-text-ad], .uEierd, .related-question-pair, [data-initq], .g-blk')) return;
+
+      const h3 = block.querySelector('h3');
+      if (h3 && !block.querySelector('.lg-serp-rank-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'lg-serp-rank-badge';
+        badge.textContent = '#' + rank;
+        h3.parentNode.insertBefore(badge, h3);
+        rank++;
+      }
+    });
+  }
+
+  // ========================================================
+  // 1-Click SERP Data Extractor Modal
+  // ========================================================
+  function extractSerpData() {
+    const results = [];
+    const rso = document.getElementById('rso');
+    let rank = 1;
+
+    if (rso) {
+      const organicBlocks = rso.querySelectorAll('div.MjjYud, div.g');
+      organicBlocks.forEach(function (block) {
+        if (block.closest('[data-text-ad], .uEierd, .related-question-pair, [data-initq], .g-blk')) return;
+
+        const h3 = block.querySelector('h3');
+        const link = block.querySelector('a[href^="http"]');
+        if (h3 && link) {
+          let domain = '';
+          try {
+            domain = new URL(link.href).hostname.replace(/^www\./, '');
+          } catch (e) {
+            domain = link.href;
+          }
+
+          results.push({
+            rank: rank++,
+            title: h3.textContent.trim(),
+            domain: domain,
+            url: link.href
+          });
+        }
+      });
+    }
+
+    const adsCount = document.querySelectorAll('[data-text-ad], .uEierd').length;
+    const hasLocal = document.querySelector('[data-local-pack], div.rllt__link, .VkpGBb') ? 1 : 0;
+
+    return { results: results, adsCount: adsCount, hasLocal: hasLocal };
+  }
+
+  function openExtractorModal() {
+    // Remove any existing modal
+    const existing = document.getElementById('location-gear-extractor-modal');
+    if (existing) existing.remove();
+
+    const data = extractSerpData();
+    const loc = activeLocation || { name: 'United States', flag: '🇺🇸', code: 'US' };
+
+    const modal = document.createElement('div');
+    modal.id = 'location-gear-extractor-modal';
+    modal.className = 'lg-modal-backdrop';
+
+    let tableRows = '';
+    data.results.forEach(function (row) {
+      tableRows += `
+        <tr>
+          <td class="lg-rank-col">#${row.rank}</td>
+          <td class="lg-title-col" title="${escapeHtml(row.title)}">${escapeHtml(row.title)}</td>
+          <td class="lg-domain-col">${escapeHtml(row.domain)}</td>
+          <td class="lg-url-col"><a href="${escapeHtml(row.url)}" target="_blank" rel="noopener">${escapeHtml(row.url)}</a></td>
+        </tr>
+      `;
+    });
+
+    modal.innerHTML = `
+      <div class="lg-extractor-card">
+        <div class="lg-extractor-header">
+          <div class="lg-extractor-title">
+            <span>📊</span>
+            <span>SERP Data Extractor • ${data.results.length} Results Captured (${loc.flag} ${loc.name})</span>
+          </div>
+          <button type="button" class="lg-extractor-close" id="lg-modal-close-btn">✕</button>
+        </div>
+
+        <div class="lg-extractor-summary">
+          <span><strong>${data.results.length}</strong> Organic Positions</span>
+          <span>•</span>
+          <span><strong>${data.adsCount}</strong> Ads Active</span>
+          <span>•</span>
+          <span><strong>${data.hasLocal}</strong> Local Pack</span>
+        </div>
+
+        <div class="lg-extractor-actions">
+          <button type="button" class="lg-btn-action-primary" id="lg-btn-copy-urls">
+            <span>📋 Copy All URLs to Clipboard</span>
+          </button>
+          <button type="button" class="lg-btn-action-secondary" id="lg-btn-download-csv">
+            <span>📥 Download Full CSV</span>
+          </button>
+        </div>
+
+        <div class="lg-extractor-table-wrap">
+          <table class="lg-extractor-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Page Title</th>
+                <th>Domain</th>
+                <th>Target URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || '<tr><td colspan="4" style="text-align:center; padding: 20px; color:#70757a;">No organic rankings found</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Event Listeners for Extractor Modal
+    modal.querySelector('#lg-modal-close-btn').addEventListener('click', function () {
+      modal.remove();
+    });
+
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.remove();
+    });
+
+    // Copy All URLs
+    modal.querySelector('#lg-btn-copy-urls').addEventListener('click', function () {
+      const urls = data.results.map(r => r.url).join('\n');
+      navigator.clipboard.writeText(urls).then(function () {
+        const btn = modal.querySelector('#lg-btn-copy-urls');
+        btn.innerHTML = '<span>✓ Copied ' + data.results.length + ' URLs!</span>';
+        setTimeout(function () {
+          btn.innerHTML = '<span>📋 Copy All URLs to Clipboard</span>';
+        }, 2000);
+      });
+    });
+
+    // Download CSV
+    modal.querySelector('#lg-btn-download-csv').addEventListener('click', function () {
+      const query = new URL(window.location.href).searchParams.get('q') || 'search';
+      let csv = 'Rank,Title,Domain,URL\n';
+      data.results.forEach(function (r) {
+        const cleanTitle = `"${r.title.replace(/"/g, '""')}"`;
+        const cleanUrl = `"${r.url.replace(/"/g, '""')}"`;
+        csv += `${r.rank},${cleanTitle},${r.domain},${cleanUrl}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `location-gear-${loc.code}-${query.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
+  // ========================================================
+  // Dual-SERP Split Comparison Overlay (50/50 View)
+  // ========================================================
+  function openDualCompareModal() {
+    const existing = document.getElementById('location-gear-compare-modal');
+    if (existing) existing.remove();
+
+    const currentLoc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸' };
+    const compareCode = currentLoc.code === 'US' ? 'GB' : 'US';
+    const compareLoc = findCountry(compareCode) || { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' };
+
+    const query = new URL(window.location.href).searchParams.get('q') || '';
+    const leftUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${currentLoc.code.toLowerCase()}&hl=en`;
+    const rightUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gl=${compareLoc.code.toLowerCase()}&hl=en`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'location-gear-compare-modal';
+    overlay.className = 'lg-compare-overlay';
+
+    overlay.innerHTML = `
+      <div class="lg-compare-header">
+        <div class="lg-compare-header-left">
+          <span style="font-size: 18px;">🌍</span>
+          <span class="lg-compare-title">Dual SERP Split View: "${escapeHtml(query)}"</span>
+        </div>
+
+        <div class="lg-compare-header-actions">
+          <button type="button" class="lg-compare-btn" id="lg-compare-swap-btn">
+            <span>🔄 Swap Countries</span>
+          </button>
+          <button type="button" class="lg-compare-btn primary" id="lg-compare-close-btn">
+            <span>✕ Close Split View</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="lg-compare-split-body">
+        <div class="lg-compare-pane left">
+          <div class="lg-compare-pane-header">
+            <span>[ ${currentLoc.flag} ${currentLoc.name} SERP ]</span>
+            <span style="font-weight: 500; color: #5f6368;">gl=${currentLoc.code.toLowerCase()}</span>
+          </div>
+          <iframe class="lg-compare-frame" id="lg-frame-left" src="${leftUrl}"></iframe>
+        </div>
+
+        <div class="lg-compare-divider-badge">⇄</div>
+
+        <div class="lg-compare-pane right">
+          <div class="lg-compare-pane-header">
+            <span>[ ${compareLoc.flag} ${compareLoc.name} SERP ]</span>
+            <span style="font-weight: 500; color: #5f6368;">gl=${compareLoc.code.toLowerCase()}</span>
+          </div>
+          <iframe class="lg-compare-frame" id="lg-frame-right" src="${rightUrl}"></iframe>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#lg-compare-close-btn').addEventListener('click', function () {
+      overlay.remove();
+    });
+
+    overlay.querySelector('#lg-compare-swap-btn').addEventListener('click', function () {
+      const leftFrame = overlay.querySelector('#lg-frame-left');
+      const rightFrame = overlay.querySelector('#lg-frame-right');
+      const tempSrc = leftFrame.src;
+      leftFrame.src = rightFrame.src;
+      rightFrame.src = tempSrc;
+    });
+
+    // Close on Escape
+    const escHandler = function (e) {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }
+
+  // ========================================================
+  // Compact Badge Under Camera
+  // ========================================================
   function injectBadgeUnderCamera() {
     if (document.getElementById('location-gear-wrapper')) {
       alignWithCamera();
@@ -132,7 +564,6 @@
     alignWithCamera();
   }
 
-  // Dynamically align the badge horizontally with the Camera icon
   function alignWithCamera() {
     const wrapper = document.getElementById('location-gear-wrapper');
     const searchBox = findSearchBox();
@@ -151,11 +582,9 @@
     }
   }
 
-  // Render Badge and Enhanced Dropdown HTML
   function renderBadgeHTML(wrapper) {
     const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1 };
 
-    // Quick pills inside dropdown
     let quickPillsHtml = '';
     DEFAULT_QUICK_PILLS.forEach(function (code) {
       const c = findCountry(code);
@@ -170,7 +599,6 @@
       }
     });
 
-    // Recent locations chips
     let recentsHtml = '';
     recentCodes.forEach(function (code) {
       const c = findCountry(code);
@@ -185,29 +613,25 @@
     });
 
     wrapper.innerHTML = `
-      <!-- Sleek Compact Badge (Right below Camera) -->
       <button type="button" id="location-gear-badge" title="SERP Location: ${loc.name} (${loc.code}) - Press Alt+L to change">
         <span class="lg-badge-flag">${loc.flag || '🌐'}</span>
-        <span class="lg-badge-code">${loc.code}</span>
+        <span class="lg-badge-code">${locationEnabled ? loc.code : 'OFF'}</span>
         <span class="lg-badge-arrow">▾</span>
       </button>
 
-      <!-- Enhanced Dropdown Menu (Anchored to right of badge) -->
       <div id="location-gear-dropdown">
         <div class="lg-dropdown-header">
           <input type="text" class="lg-search-box" id="lg-search-input" placeholder="🔍 Search country, code, city, or ZIP..." autocomplete="off">
         </div>
 
-        <!-- Settings Bar (Language Lock) -->
         <div class="lg-settings-bar">
-          <label class="lg-toggle-item" title="Forces Google's navigation interface to stay in English (hl=en) while search results stay geographically localized">
+          <label class="lg-toggle-item" title="Forces Google UI to stay in English (hl=en)">
             <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-lang" ${languageLock ? 'checked' : ''}>
             <span>Keep English UI</span>
           </label>
-          <span style="font-size: 11px; color: #1a73e8; font-weight: 500;">✓ Safe Regional Index</span>
+          <span style="font-size: 11px; color: #188038; font-weight: 600;">✓ 0 CAPTCHAs</span>
         </div>
 
-        <!-- Recents Bar -->
         ${recentCodes.length > 0 ? `
           <div class="lg-recents-section">
             <span class="lg-recents-label">🕒 Recents:</span>
@@ -215,12 +639,10 @@
           </div>
         ` : ''}
 
-        <!-- Quick Top Markets -->
         <div class="lg-quick-section">
           ${quickPillsHtml}
         </div>
 
-        <!-- Tier Tabs -->
         <div class="lg-tier-tabs">
           <button type="button" class="lg-tier-tab ${activeTierFilter === 'all' ? 'active' : ''}" data-tier="all">All (196)</button>
           <button type="button" class="lg-tier-tab ${activeTierFilter === '1' ? 'active' : ''}" data-tier="1">Tier 1 (24)</button>
@@ -228,13 +650,11 @@
           <button type="button" class="lg-tier-tab ${activeTierFilter === '3' ? 'active' : ''}" data-tier="3">Tier 3 (136)</button>
         </div>
 
-        <!-- Scrollable List of Countries & Cities -->
         <ul class="lg-country-list" id="lg-country-list">
-          <!-- Rendered dynamically -->
         </ul>
 
         <div class="lg-dropdown-footer">
-          <span><span class="lg-status-dot"></span>GPS, UULE & TZ Synced</span>
+          <span><span class="lg-status-dot"></span>Zero-Lag gl Engine</span>
           <span class="lg-shortcut-hint">Alt+L • ESC to close</span>
         </div>
       </div>
@@ -243,7 +663,6 @@
     renderCountryList();
   }
 
-  // Filter and render countries, custom zip/city, and cities in dropdown
   function renderCountryList() {
     const listEl = document.getElementById('lg-country-list');
     if (!listEl) return;
@@ -264,7 +683,6 @@
 
     let html = '';
 
-    // Custom ZIP / City option if user typed something not matching an exact single country
     if (query.length >= 2) {
       html += `
         <li class="lg-custom-location-item" data-custom-location="${escapeHtml(searchQuery.trim())}">
@@ -313,21 +731,16 @@
     selectedIndex = -1;
   }
 
-  // Setup click, toggle, and keyboard event listeners
   function setupEventListeners(wrapper) {
     const badge = wrapper.querySelector('#location-gear-badge');
-    const dropdown = wrapper.querySelector('#location-gear-dropdown');
     const searchInput = wrapper.querySelector('#lg-search-input');
     const toggleLang = wrapper.querySelector('#lg-toggle-lang');
-    const toggleStrict = wrapper.querySelector('#lg-toggle-strict');
 
-    // Toggle Dropdown
     badge.addEventListener('click', function (e) {
       e.stopPropagation();
       toggleDropdown();
     });
 
-    // Language Lock Toggle
     if (toggleLang) {
       toggleLang.addEventListener('change', function () {
         languageLock = toggleLang.checked;
@@ -335,23 +748,18 @@
       });
     }
 
-
-
-    // Close on outside click
     document.addEventListener('click', function (e) {
       if (isDropdownOpen && !wrapper.contains(e.target)) {
         closeDropdown();
       }
     });
 
-    // Live search input
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
         searchQuery = e.target.value;
         renderCountryList();
       });
 
-      // Arrow Key & Enter Navigation
       searchInput.addEventListener('keydown', function (e) {
         const items = wrapper.querySelectorAll('.lg-country-item, .lg-custom-location-item');
         if (!items || items.length === 0) return;
@@ -369,13 +777,12 @@
           if (selectedIndex >= 0 && selectedIndex < items.length) {
             items[selectedIndex].click();
           } else if (items.length > 0) {
-            items[0].click(); // select first matching item
+            items[0].click();
           }
         }
       });
     }
 
-    // Tier Tabs
     wrapper.querySelectorAll('.lg-tier-tab').forEach(function (tab) {
       tab.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -386,7 +793,6 @@
       });
     });
 
-    // Quick Pills & Recent Chips
     wrapper.addEventListener('click', function (e) {
       const pill = e.target.closest('.lg-quick-btn, .lg-recent-chip');
       if (pill) {
@@ -397,13 +803,11 @@
       }
     });
 
-    // Country List delegation
     const listEl = wrapper.querySelector('#lg-country-list');
     if (listEl) {
       listEl.addEventListener('click', function (e) {
         e.stopPropagation();
 
-        // Custom ZIP / City selected
         const customItem = e.target.closest('.lg-custom-location-item');
         if (customItem) {
           const customLoc = customItem.getAttribute('data-custom-location');
@@ -411,7 +815,6 @@
           return;
         }
 
-        // Cities toggle
         const cityBtn = e.target.closest('.lg-city-btn');
         if (cityBtn) {
           const code = cityBtn.getAttribute('data-cities-toggle');
@@ -424,7 +827,6 @@
           return;
         }
 
-        // City chip clicked
         const cityChip = e.target.closest('.lg-city-chip');
         if (cityChip) {
           const cCode = cityChip.getAttribute('data-country-code');
@@ -446,7 +848,6 @@
           return;
         }
 
-        // Country row clicked
         const item = e.target.closest('.lg-country-item');
         if (item) {
           const code = item.getAttribute('data-code');
@@ -495,7 +896,6 @@
     if (badge) badge.classList.remove('open');
   }
 
-  // Keyboard shortcut: Alt + L (or Option + L on Mac)
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function (e) {
       if (e.altKey && (e.key === 'l' || e.key === 'L' || e.code === 'KeyL')) {
@@ -507,7 +907,6 @@
     });
   }
 
-  // Remember recently chosen countries
   function saveToRecents(code) {
     if (!code) return;
     const upper = code.toUpperCase();
@@ -515,7 +914,6 @@
     chrome.storage.local.set({ recentCodes: recentCodes });
   }
 
-  // Apply custom ZIP / City location
   function applyCustomLocation(customQuery) {
     if (!customQuery) return;
     const currentCode = activeLocation ? activeLocation.code : 'US';
@@ -535,64 +933,64 @@
     });
   }
 
-  // Pre-seed any Google search form with hidden gl and hl inputs so user submissions
-  // are natively localized immediately without requiring any post-load redirect
   function hookSearchForms() {
     if (!activeLocation) return;
     const targetCode = activeLocation.code.toLowerCase();
 
     const forms = document.querySelectorAll('form[action*="/search"], form[role="search"], form#tsf');
     forms.forEach(function (form) {
-      // gl hidden input
-      let glInput = form.querySelector('input[name="gl"]');
-      if (!glInput) {
-        glInput = document.createElement('input');
-        glInput.type = 'hidden';
-        glInput.name = 'gl';
-        form.appendChild(glInput);
-      }
-      glInput.value = targetCode;
-
-      // hl hidden input
-      if (languageLock) {
-        let hlInput = form.querySelector('input[name="hl"]');
-        if (!hlInput) {
-          hlInput = document.createElement('input');
-          hlInput.type = 'hidden';
-          hlInput.name = 'hl';
-          form.appendChild(hlInput);
+      if (locationEnabled) {
+        let glInput = form.querySelector('input[name="gl"]');
+        if (!glInput) {
+          glInput = document.createElement('input');
+          glInput.type = 'hidden';
+          glInput.name = 'gl';
+          form.appendChild(glInput);
         }
-        hlInput.value = 'en';
+        glInput.value = targetCode;
+
+        if (languageLock) {
+          let hlInput = form.querySelector('input[name="hl"]');
+          if (!hlInput) {
+            hlInput = document.createElement('input');
+            hlInput.type = 'hidden';
+            hlInput.name = 'hl';
+            form.appendChild(hlInput);
+          }
+          hlInput.value = 'en';
+        }
+
+        if (isTop100) {
+          let numInput = form.querySelector('input[name="num"]');
+          if (!numInput) {
+            numInput = document.createElement('input');
+            numInput.type = 'hidden';
+            numInput.name = 'num';
+            form.appendChild(numInput);
+          }
+          numInput.value = '100';
+        }
+      } else {
+        const gl = form.querySelector('input[name="gl"]');
+        if (gl) gl.remove();
+        const num = form.querySelector('input[name="num"]');
+        if (num) num.remove();
       }
 
-      // Purge any uule or pws inputs from form to avoid triggering 403
-      const badInputs = form.querySelectorAll('input[name="uule"], input[name="pws"]');
+      const badInputs = form.querySelectorAll('input[name="uule"], input[name="pws"], input[name="cr"]');
       badInputs.forEach(function (el) { el.remove(); });
     });
   }
 
-  // Intercept form submissions immediately at capture phase
-  document.addEventListener('submit', function (e) {
+  document.addEventListener('submit', function () {
     hookSearchForms();
   }, true);
 
-  /**
-   * Apply Location 100% Accurately:
-   * 1. Updates chrome.storage.local
-   * 2. Fires custom event with coordinates & timezone for inject-main.js
-   * 3. Applies regional index (gl)
-   * 4. Applies Language Lock (hl=en vs native)
-   * 5. Applies Strict Local Filter (cr=countryXX)
-   * 6. PERMANENTLY REMOVES uule and pws=0 from standard searches to eliminate Google 403 Forbidden!
-   * 7. Navigates cleanly to localized SERP
-   */
   function applyLocation(locationObj) {
     if (!locationObj) return;
 
     activeLocation = locationObj;
     saveToRecents(locationObj.code);
-
-    const tz = locationObj.timezone || getTimezone(locationObj.code);
 
     chrome.storage.local.set({
       activeLocation: locationObj,
@@ -600,7 +998,6 @@
     }, function () {
       const currentUrl = new URL(window.location.href);
 
-      // Check if on Google Maps
       if (currentUrl.hostname.includes('maps.google') || currentUrl.pathname.startsWith('/maps')) {
         const canonical = locationObj.canonicalName || locationObj.name;
         const mapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(canonical)}&ll=${locationObj.lat},${locationObj.lng}`;
@@ -608,10 +1005,8 @@
         return;
       }
 
-      // 1. Regional Index (gl)
       currentUrl.searchParams.set('gl', locationObj.code.toLowerCase());
 
-      // 2. Language Lock (hl)
       if (languageLock) {
         currentUrl.searchParams.set('hl', 'en');
       } else {
@@ -619,7 +1014,10 @@
         currentUrl.searchParams.set('hl', nativeLang);
       }
 
-      // 3. PURGE anti-bot / scraper / telemetry flags that trigger Google 403 Forbidden:
+      if (isTop100) {
+        currentUrl.searchParams.set('num', '100');
+      }
+
       currentUrl.searchParams.delete('cr');
       currentUrl.searchParams.delete('uule');
       currentUrl.searchParams.delete('pws');
@@ -629,7 +1027,6 @@
         currentUrl.searchParams.delete('sourceid');
       }
 
-      // Sanitize URL: clean any double ampersands (&&) or malformed delimiters
       const cleanHref = currentUrl.toString()
         .replace(/&&+/g, '&')
         .replace(/\?&/g, '?')
@@ -646,7 +1043,6 @@
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // MutationObserver for Google dynamic transitions
   function setupMutationObserver() {
     let lastUrl = window.location.href;
     const observer = new MutationObserver(function () {
@@ -656,6 +1052,11 @@
         alignWithCamera();
       }
 
+      if (!document.getElementById('location-gear-dock')) {
+        injectInSerpDock();
+      }
+
+      tagOrganicRanks();
       hookSearchForms();
 
       if (window.location.href !== lastUrl) {
@@ -663,6 +1064,8 @@
         loadSettings(function () {
           const wrapper = document.getElementById('location-gear-wrapper');
           if (wrapper) renderBadgeHTML(wrapper);
+          updateDockUI();
+          tagOrganicRanks();
           alignWithCamera();
           hookSearchForms();
         });

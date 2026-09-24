@@ -1,28 +1,41 @@
-# Location Gear 🌍⚙️
+# Location Gear 🌍⚙️ (v1.1.0)
 
-> **Universal Cross-Browser Extension for 100% Accurate Google SERP & Maps Region Spoofing**  
-> Works natively on **Google Chrome**, **Comet Browser**, **Mozilla Firefox**, **Apple Safari**, **Brave**, **Microsoft Edge**, and **Opera**.
+> **The Modern, Zero-Lag SERP & Maps Region Switcher with In-SERP Productivity Tools**  
+> 100% Free, Unlimited Searches, Zero CAPTCHAs, and Zero 403 Errors.  
+> Works natively on **Google Chrome**, **Brave**, **Microsoft Edge**, **Opera**, and **Firefox**.
 
 ---
 
-## 🎯 Key Features
+## 🎯 Key Features (v1.1.0)
 
-1. **In-Page Location Bar Directly Below the Search Bar:**
-   - Injected natively below Google's search box without covering autocomplete suggestions.
-   - Shows the active country flag and name (e.g., `[ 🇨🇦 Canada (CA) ▼ ]`).
-   - Quick-switch pill buttons for instant 1-click switching between top markets (`US`, `CA`, `UK`, `AU`, `DE`, `FR`, `JP`, etc.).
+1. **Native In-SERP Control Dock (Live Google Search):**
+   - Injected cleanly right below Google's category tabs (`All`, `Images`, `News`).
+   - Displays active country: `[ 🇺🇸 United States ▾ ]` with instant country picker.
+   - Quick-switch favorite chips: `[ 🇬🇧 UK ] [ 🇨🇦 CA ] [ 🇦🇺 AU ]` for 1-tap switching.
+   - **`[ 🔄 Reset to Home ]`**: 1-click button to instantly disable spoofing and restore your real physical location.
+   - **`[ ⚡ Top 100 ]`**: 1-tap switch to display 100 results per page (`num=100`) without opening Google Search settings.
 
-2. **100% Reliable Location Accuracy (SERP Web + Map Pack + Google Maps):**
-   - **Google `gl` regional parameter:** Forces Google's backend search index to match the chosen country.
-   - **Google `uule` Canonical Location Token:** Dynamically encodes canonical location names into Google's proprietary Base64 format (`w+CAIQICI...`), changing the bottom location badge and SERP local 3-pack.
-   - **HTML5 Geolocation API Override:** Injects into the main world execution context at `document_start` to intercept `navigator.geolocation.getCurrentPosition` and `watchPosition`, returning the exact physical coordinates (latitude/longitude) of the target country or city.
-   - **Google Maps Integration:** Direct support for `maps.google.com` positioning.
+2. **Organic Ranking Badges (`#1`, `#2`, `#3...`):**
+   - Automatically tags every organic search result with its exact position number right beside the title.
+   - Saves time counting links during SEO audits.
 
-3. **Worldwide Coverage (Tier 1, Tier 2, Tier 3):**
-   - **Tier 1 (24 countries):** United States, United Kingdom, Canada, Australia, Germany, France, Japan, Singapore, South Korea, Switzerland, Netherlands, etc.
-   - **Tier 2 (36 countries):** Brazil, Mexico, UAE, Saudi Arabia, Poland, Spain, Italy, Turkey, South Africa, Malaysia, Thailand, etc.
-   - **Tier 3 (136 countries & territories):** India, Pakistan, Nigeria, Egypt, Indonesia, Vietnam, Philippines, and all remaining sovereign nations.
-   - Live search box with instant filtering by country name, ISO code, or major metropolitan city (e.g. *Toronto, Vancouver, New York, London, Tokyo, Sydney*).
+3. **1-Click SERP Extractor (CSV & Clipboard):**
+   - Instant harvester modal extracting Rank, Page Title, Domain, and Target URL.
+   - `[ 📋 Copy All URLs to Clipboard ]` for pasting directly into spreadsheets.
+   - `[ 📥 Download Full CSV ]` for client deliverables.
+
+4. **Dual-SERP Split Comparison Mode (50/50 View):**
+   - Side-by-side view comparing two countries simultaneously (e.g. US vs UK).
+   - Synced scrolling between both panes to easily spot ranking differences.
+
+5. **Toolbar Status Badge & Master Reset Switch:**
+   - Chrome toolbar icon displays the live country code (`US`, `UK`) in green, or `OFF` in grey.
+   - Prominent **"Turn Off / Back to Real Location"** button in popup for effortless switching.
+
+6. **Bulletproof Zero-Lag Engine (0 CAPTCHAs, 0 403 Forbidden):**
+   - Uses Google's official, sanctioned `gl` regional parameter.
+   - Purges scraper tokens (`uule`, `pws`, `cr`) that trigger Google Botguard security checkpoints.
+   - Keeps Google navigation in English (`hl=en`) to avoid foreign language confusion.
 
 ---
 

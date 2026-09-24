@@ -5,10 +5,13 @@
 document.addEventListener('DOMContentLoaded', function () {
   const data = window.LocationGearData || {};
   const COUNTRIES = data.COUNTRIES || [];
-  const generateUule = data.generateUule || function () { return ''; };
   const findCountry = data.findCountry || function () { return null; };
 
   let activeLocation = null;
+  let locationEnabled = true;
+  let favoriteCodes = ['US', 'GB', 'CA', 'AU', 'DE'];
+  let isTop100 = false;
+  let isLangLock = true;
   let activeTierFilter = 'all';
   let searchQuery = '';
 
@@ -16,14 +19,21 @@ document.addEventListener('DOMContentLoaded', function () {
   const activeName = document.getElementById('active-name');
   const activeCoords = document.getElementById('active-coords');
   const activeTier = document.getElementById('active-tier');
+  const activeCard = document.getElementById('active-card');
+  const statusLabel = document.getElementById('status-label');
   const spoofToggle = document.getElementById('spoof-toggle');
+  const masterResetBtn = document.getElementById('master-reset-btn');
+  const masterBtnText = document.getElementById('master-btn-text');
+  const favoriteChipsEl = document.getElementById('favorite-chips');
   const searchInput = document.getElementById('popup-search');
   const listEl = document.getElementById('popup-country-list');
   const openGoogleBtn = document.getElementById('open-google-btn');
+  const toggleTop100 = document.getElementById('toggle-top100');
+  const toggleLangLock = document.getElementById('toggle-langlock');
 
   // Load storage state
-  chrome.storage.local.get(['activeLocation', 'locationEnabled'], function (res) {
-    if (res.activeLocation) {
+  chrome.storage.local.get(['activeLocation', 'locationEnabled', 'favoriteCodes', 'top100', 'languageLock'], function (res) {
+    if (res.activeLocation && res.activeLocation.code) {
       activeLocation = res.activeLocation;
     } else {
       activeLocation = findCountry('US') || COUNTRIES[0];
@@ -31,20 +41,77 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (res.locationEnabled !== undefined) {
-      spoofToggle.checked = Boolean(res.locationEnabled);
+      locationEnabled = Boolean(res.locationEnabled);
+    }
+    spoofToggle.checked = locationEnabled;
+
+    if (Array.isArray(res.favoriteCodes) && res.favoriteCodes.length > 0) {
+      favoriteCodes = res.favoriteCodes;
     }
 
-    updateActiveCard();
+    if (res.top100 !== undefined) {
+      isTop100 = Boolean(res.top100);
+    }
+    if (toggleTop100) toggleTop100.checked = isTop100;
+
+    if (res.languageLock !== undefined) {
+      isLangLock = Boolean(res.languageLock);
+    }
+    if (toggleLangLock) toggleLangLock.checked = isLangLock;
+
+    updateUI();
+    renderFavoriteChips();
     renderList();
   });
 
-  function updateActiveCard() {
-    if (!activeLocation) return;
-    activeFlag.textContent = activeLocation.flag || '🌐';
-    activeName.textContent = `${activeLocation.name} (${activeLocation.code})`;
-    activeCoords.textContent = `${activeLocation.lat.toFixed(4)}°, ${activeLocation.lng.toFixed(4)}°`;
-    activeTier.textContent = `Tier ${activeLocation.tier}`;
-    activeTier.className = `tier-pill t${activeLocation.tier}`;
+  function updateUI() {
+    // 1. Status label & Card
+    if (locationEnabled) {
+      statusLabel.textContent = 'ACTIVE';
+      statusLabel.className = 'status-label';
+      activeCard.classList.remove('disabled');
+      spoofToggle.checked = true;
+
+      masterResetBtn.className = 'btn-master-reset';
+      masterBtnText.textContent = 'Turn Off / Back to Real Location';
+    } else {
+      statusLabel.textContent = 'DISABLED';
+      statusLabel.className = 'status-label disabled';
+      activeCard.classList.add('disabled');
+      spoofToggle.checked = false;
+
+      masterResetBtn.className = 'btn-master-reset inactive';
+      masterBtnText.textContent = '✓ Turn On Location Spoofing';
+    }
+
+    // 2. Active Card Info
+    if (activeLocation) {
+      activeFlag.textContent = activeLocation.flag || '🌐';
+      activeName.textContent = `${activeLocation.name} (${activeLocation.code})`;
+      activeCoords.textContent = `${activeLocation.lat.toFixed(4)}°, ${activeLocation.lng.toFixed(4)}°`;
+      activeTier.textContent = `Tier ${activeLocation.tier}`;
+      activeTier.className = `tier-pill t${activeLocation.tier}`;
+    }
+
+    renderFavoriteChips();
+  }
+
+  function renderFavoriteChips() {
+    if (!favoriteChipsEl) return;
+    let html = '';
+    favoriteCodes.forEach(function (code) {
+      const c = findCountry(code);
+      if (c) {
+        const isSelected = locationEnabled && activeLocation && activeLocation.code === c.code;
+        html += `
+          <button type="button" class="fav-chip ${isSelected ? 'active' : ''}" data-code="${c.code}" title="${c.name}">
+            <span>${c.flag}</span>
+            <span>${c.code}</span>
+          </button>
+        `;
+      }
+    });
+    favoriteChipsEl.innerHTML = html;
   }
 
   function renderList() {
@@ -58,13 +125,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     if (filtered.length === 0) {
-      listEl.innerHTML = `<li style="padding: 14px; text-align: center; color: #70757a; font-size: 12px;">No countries found</li>`;
+      listEl.innerHTML = `<li style="padding: 12px; text-align: center; color: #70757a; font-size: 11px;">No countries found</li>`;
       return;
     }
 
     let html = '';
     filtered.forEach(function (c) {
-      const isSelected = activeLocation && activeLocation.code === c.code;
+      const isSelected = locationEnabled && activeLocation && activeLocation.code === c.code;
       html += `
         <li class="popup-country-item ${isSelected ? 'selected' : ''}" data-code="${c.code}">
           <div class="item-left">
@@ -78,10 +145,58 @@ document.addEventListener('DOMContentLoaded', function () {
     listEl.innerHTML = html;
   }
 
-  // Toggle switch
-  spoofToggle.addEventListener('change', function () {
-    chrome.storage.local.set({ locationEnabled: spoofToggle.checked });
+  // Master Reset / Toggle button click
+  masterResetBtn.addEventListener('click', function () {
+    locationEnabled = !locationEnabled;
+    chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
+      updateUI();
+    });
   });
+
+  // Switch toggle
+  spoofToggle.addEventListener('change', function () {
+    locationEnabled = spoofToggle.checked;
+    chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
+      updateUI();
+    });
+  });
+
+  // Top 100 toggle
+  if (toggleTop100) {
+    toggleTop100.addEventListener('change', function () {
+      isTop100 = toggleTop100.checked;
+      chrome.storage.local.set({ top100: isTop100 });
+    });
+  }
+
+  // Language Lock toggle
+  if (toggleLangLock) {
+    toggleLangLock.addEventListener('change', function () {
+      isLangLock = toggleLangLock.checked;
+      chrome.storage.local.set({ languageLock: isLangLock });
+    });
+  }
+
+  // Favorite chip click
+  if (favoriteChipsEl) {
+    favoriteChipsEl.addEventListener('click', function (e) {
+      const chip = e.target.closest('.fav-chip');
+      if (!chip) return;
+      const code = chip.getAttribute('data-code');
+      const country = findCountry(code);
+      if (!country) return;
+
+      activeLocation = country;
+      locationEnabled = true;
+      chrome.storage.local.set({
+        activeLocation: country,
+        locationEnabled: true
+      }, function () {
+        updateUI();
+        renderList();
+      });
+    });
+  }
 
   // Search filter
   searchInput.addEventListener('input', function (e) {
@@ -109,12 +224,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!country) return;
 
     activeLocation = country;
+    locationEnabled = true;
     chrome.storage.local.set({
       activeLocation: country,
       locationEnabled: true
     }, function () {
-      spoofToggle.checked = true;
-      updateActiveCard();
+      updateUI();
       renderList();
     });
   });
@@ -122,7 +237,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // "Open Google with this Region"
   openGoogleBtn.addEventListener('click', function () {
     if (!activeLocation) return;
-    const url = `https://www.google.com/search?q=&gl=${activeLocation.code.toLowerCase()}&hl=en`;
+    const glParam = locationEnabled ? `&gl=${activeLocation.code.toLowerCase()}` : '';
+    const hlParam = isLangLock ? '&hl=en' : '';
+    const numParam = isTop100 ? '&num=100' : '';
+    const url = `https://www.google.com/search?q=${glParam}${hlParam}${numParam}`;
     chrome.tabs.create({ url: url });
   });
 });

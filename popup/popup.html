@@ -7,12 +7,14 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+  <!-- Top Navigation Header -->
   <div class="header">
     <div class="logo">
       <span class="logo-icon">🌍</span>
       <h1>Location Gear</h1>
     </div>
-    <div class="toggle-container">
+    <div class="toggle-status-wrap">
+      <span class="status-label" id="status-label">ACTIVE</span>
       <label class="switch" title="Toggle Location Spoofing">
         <input type="checkbox" id="spoof-toggle" checked>
         <span class="slider round"></span>
@@ -20,28 +22,44 @@
     </div>
   </div>
 
-  <div class="active-card">
-    <div class="active-badge">Active Region</div>
+  <!-- Primary Master Action Button (Instant Turn Off / Back to Real Location) -->
+  <div class="master-action-section">
+    <button type="button" class="btn-master-reset" id="master-reset-btn">
+      <span class="btn-icon">⏻</span>
+      <span id="master-btn-text">Turn Off / Back to Real Location</span>
+    </button>
+  </div>
+
+  <!-- Active Card -->
+  <div class="active-card" id="active-card">
+    <div class="active-badge-bar">
+      <span class="active-badge-title">Active Region</span>
+      <span class="tier-pill t1" id="active-tier">Tier 1</span>
+    </div>
     <div class="active-content">
       <span class="active-flag" id="active-flag">🇺🇸</span>
       <div class="active-info">
         <h2 id="active-name">United States (US)</h2>
         <p id="active-coords">37.0902° N, 95.7129° W</p>
       </div>
-      <span class="tier-pill t1" id="active-tier">Tier 1</span>
     </div>
   </div>
 
-  <div class="actions">
-    <button type="button" class="btn primary-btn" id="open-google-btn">
-      <span>🚀 Open Google with this Region</span>
-    </button>
+  <!-- Quick Select Favorites Bar -->
+  <div class="favorites-section">
+    <span class="section-title">Quick Select Favorites</span>
+    <div class="favorite-chips" id="favorite-chips">
+      <!-- Injected via popup.js: US, UK, CA, AU, DE -->
+    </div>
   </div>
 
+  <!-- Search Section -->
   <div class="search-section">
-    <input type="text" id="popup-search" placeholder="🔍 Search country, code, or city..." autocomplete="off">
+    <span class="section-title">Select Any Country</span>
+    <input type="text" id="popup-search" placeholder="🔍 Search 196 countries, codes, cities..." autocomplete="off">
   </div>
 
+  <!-- Tier Filter Tabs -->
   <div class="tabs">
     <button type="button" class="tab-btn active" data-tier="all">All (196)</button>
     <button type="button" class="tab-btn" data-tier="1">Tier 1 (24)</button>
@@ -49,15 +67,49 @@
     <button type="button" class="tab-btn" data-tier="3">Tier 3 (136)</button>
   </div>
 
+  <!-- Scrollable Country List -->
   <div class="list-container">
     <ul id="popup-country-list">
       <!-- Injected via popup.js -->
     </ul>
   </div>
 
+  <!-- Power Feature Toggles -->
+  <div class="settings-toggles">
+    <div class="toggle-row">
+      <div class="toggle-text">
+        <span class="toggle-title">100 Results per Page</span>
+        <span class="toggle-desc">Appends num=100 for deep SEO audits</span>
+      </div>
+      <label class="switch mini">
+        <input type="checkbox" id="toggle-top100">
+        <span class="slider round"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-text">
+        <span class="toggle-title">English Language Lock</span>
+        <span class="toggle-desc">Keeps UI in English (hl=en)</span>
+      </div>
+      <label class="switch mini">
+        <input type="checkbox" id="toggle-langlock" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Direct Open Action -->
+  <div class="actions">
+    <button type="button" class="btn primary-btn" id="open-google-btn">
+      <span>🚀 Open Google with this Region</span>
+    </button>
+  </div>
+
+  <!-- Footer Reassurance -->
   <div class="footer">
-    <span>Works 100% on SERP & Google Maps</span>
-    <span>v1.0.0</span>
+    <span class="footer-guarantee">🛡️ Zero-Lag gl Engine • 0 CAPTCHAs</span>
+    <span class="footer-version">v1.1.0</span>
   </div>
 
   <script src="../data/countries.js"></script>
