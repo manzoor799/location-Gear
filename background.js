@@ -41,28 +41,30 @@ function getLocalizedUrl(rawUrl, settings) {
       return null;
     }
 
+    // Always strip deprecated num parameter (Google officially blocks num=100 with 403 Forbidden)
+    let strippedNum = false;
+    if (url.searchParams.has('num')) {
+      url.searchParams.delete('num');
+      strippedNum = true;
+    }
+
     // If disabled, strip our custom gl/num if present and return clean URL
     if (settings.locationEnabled === false) {
-      let modified = false;
+      let modified = strippedNum;
       if (url.searchParams.has('gl')) {
         url.searchParams.delete('gl');
-        modified = true;
-      }
-      if (url.searchParams.get('num') === '100' && settings.top100 === false) {
-        url.searchParams.delete('num');
         modified = true;
       }
       return modified ? url.toString() : null;
     }
 
     const targetLoc = settings.activeLocation;
-    if (!targetLoc || !targetLoc.code) return null;
+    if (!targetLoc || !targetLoc.code) return strippedNum ? url.toString() : null;
 
     const targetCode = targetLoc.code.toLowerCase();
     const currentGl = url.searchParams.get('gl');
     const currentHl = url.searchParams.get('hl');
     const isLangLock = settings.languageLock !== false;
-    const isTop100 = settings.top100 === true;
 
     // Check if the URL is already clean and correctly localized
     const hasUule = url.searchParams.has('uule');
@@ -73,9 +75,8 @@ function getLocalizedUrl(rawUrl, settings) {
 
     const glMatches = currentGl && currentGl.toLowerCase() === targetCode;
     const hlMatches = !isLangLock || currentHl === 'en';
-    const numMatches = !isTop100 || url.searchParams.get('num') === '100';
 
-    if (glMatches && hlMatches && numMatches && !hasUule && !hasPws && !hasCr && !hasContextSource && !hasDoubleAmp) {
+    if (glMatches && hlMatches && !strippedNum && !hasUule && !hasPws && !hasCr && !hasContextSource && !hasDoubleAmp) {
       return null; // Already correctly localized and sanitized
     }
 
@@ -87,23 +88,19 @@ function getLocalizedUrl(rawUrl, settings) {
       url.searchParams.set('hl', 'en');
     }
 
-    // 3. Top 100 results (num=100)
-    if (isTop100) {
-      url.searchParams.set('num', '100');
-    }
-
-    // 4. PURGE all anti-bot / scraper / restrictive flags that cause Google 403 Forbidden:
+    // 3. PURGE all anti-bot / scraper / deprecated flags that cause Google 403 Forbidden:
+    url.searchParams.delete('num');
     url.searchParams.delete('uule');
     url.searchParams.delete('pws');
     url.searchParams.delete('cr');
 
-    // 5. Strip internal context tracking that triggers 403 when query is modified
+    // 4. Strip internal context tracking that triggers 403 when query is modified
     if (url.searchParams.get('source') === 'chrome.ctxt') {
       url.searchParams.delete('source');
       url.searchParams.delete('sourceid');
     }
 
-    // 6. Clean up delimiters
+    // 5. Clean up delimiters
     let cleanHref = url.toString()
       .replace(/&&+/g, '&')
       .replace(/\?&/g, '?')
@@ -130,7 +127,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async function (details) {
   if (!rawUrl || !rawUrl.includes('google.') || !rawUrl.includes('/search')) return;
 
   try {
-    const settings = await chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'top100']);
+    const settings = await chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock']);
     const cleanHref = getLocalizedUrl(rawUrl, settings);
     if (cleanHref && cleanHref !== rawUrl) {
       chrome.tabs.update(details.tabId, { url: cleanHref });
@@ -152,7 +149,7 @@ chrome.storage.onChanged.addListener(function (changes, area) {
 // Message listener for popup or content script communications
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'GET_LOCATION') {
-    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'top100', 'favoriteCodes'], function (res) {
+    chrome.storage.local.get(['activeLocation', 'locationEnabled', 'languageLock', 'favoriteCodes'], function (res) {
       sendResponse(res);
     });
     return true;
@@ -180,7 +177,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 // Set default location and badge on installation or startup
 function initDefaults() {
-  chrome.storage.local.get(['activeLocation', 'locationEnabled', 'favoriteCodes', 'top100', 'languageLock'], function (res) {
+  // Purge any deprecated top100 setting
+  chrome.storage.local.remove('top100');
+
+  chrome.storage.local.get(['activeLocation', 'locationEnabled', 'favoriteCodes', 'languageLock'], function (res) {
     const updates = {};
     let loc = res.activeLocation;
     let enabled = res.locationEnabled !== false;
@@ -207,10 +207,6 @@ function initDefaults() {
 
     if (res.languageLock === undefined) {
       updates.languageLock = true;
-    }
-
-    if (res.top100 === undefined) {
-      updates.top100 = false;
     }
 
     if (Object.keys(updates).length > 0) {

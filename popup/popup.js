@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
   let activeLocation = null;
   let locationEnabled = true;
   let favoriteCodes = ['US', 'GB', 'CA', 'AU', 'DE'];
-  let isTop100 = false;
   let isLangLock = true;
   let activeTierFilter = 'all';
   let searchQuery = '';
@@ -28,11 +27,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const searchInput = document.getElementById('popup-search');
   const listEl = document.getElementById('popup-country-list');
   const openGoogleBtn = document.getElementById('open-google-btn');
-  const toggleTop100 = document.getElementById('toggle-top100');
   const toggleLangLock = document.getElementById('toggle-langlock');
 
+  // Purge legacy top100 setting to ensure no Google 403 Forbidden blocks
+  chrome.storage.local.remove('top100');
+
   // Load storage state
-  chrome.storage.local.get(['activeLocation', 'locationEnabled', 'favoriteCodes', 'top100', 'languageLock'], function (res) {
+  chrome.storage.local.get(['activeLocation', 'locationEnabled', 'favoriteCodes', 'languageLock'], function (res) {
     if (res.activeLocation && res.activeLocation.code) {
       activeLocation = res.activeLocation;
     } else {
@@ -48,11 +49,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (Array.isArray(res.favoriteCodes) && res.favoriteCodes.length > 0) {
       favoriteCodes = res.favoriteCodes;
     }
-
-    if (res.top100 !== undefined) {
-      isTop100 = Boolean(res.top100);
-    }
-    if (toggleTop100) toggleTop100.checked = isTop100;
 
     if (res.languageLock !== undefined) {
       isLangLock = Boolean(res.languageLock);
@@ -161,14 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Top 100 toggle
-  if (toggleTop100) {
-    toggleTop100.addEventListener('change', function () {
-      isTop100 = toggleTop100.checked;
-      chrome.storage.local.set({ top100: isTop100 });
-    });
-  }
-
   // Language Lock toggle
   if (toggleLangLock) {
     toggleLangLock.addEventListener('change', function () {
@@ -242,8 +230,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!activeLocation) return;
     const glParam = locationEnabled ? `&gl=${activeLocation.code.toLowerCase()}` : '';
     const hlParam = isLangLock ? '&hl=en' : '';
-    const numParam = isTop100 ? '&num=100' : '';
-    const url = `https://www.google.com/search?q=${glParam}${hlParam}${numParam}`;
+    const url = `https://www.google.com/search?q=${glParam}${hlParam}`;
     chrome.tabs.create({ url: url });
   });
 });

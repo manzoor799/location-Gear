@@ -7,10 +7,9 @@
  * 3. 1-Click SERP Data Extractor Modal (CSV & Clipboard)
  * 4. Dual-SERP Split Comparison Mode (50/50 US vs UK View)
  * 5. 1-Tap Quick Select Favorite Chips (US, UK, CA, AU, DE)
- * 6. Top 100 Results Toggle (num=100)
- * 7. Safe Language Lock (Keep English UI hl=en)
- * 8. Automatic Google Dark Mode & Light Mode adaptation
- * 9. ZERO interference with Google page layout (No sidebars or intrusive popups)
+ * 6. Safe Language Lock (Keep English UI hl=en)
+ * 7. Automatic Google Dark Mode & Light Mode adaptation
+ * 8. ZERO interference with Google page layout (No sidebars or intrusive popups)
  */
 
 (function () {
@@ -28,7 +27,6 @@
 
   let activeLocation = null;
   let locationEnabled = true;
-  let isTop100 = false;
   let languageLock = true;
   let favoriteCodes = ['US', 'GB', 'CA', 'AU', 'DE'];
   let recentCodes = ['US', 'CA', 'GB', 'FR'];
@@ -51,19 +49,24 @@
   function loadSettings(callback) {
     const url = new URL(window.location.href);
 
-    chrome.storage.local.remove('strictLocalFilter');
+    // Instant safety rescue: Purge deprecated num parameter (Google blocks num=100 with 403 Forbidden)
+    if (url.searchParams.has('num')) {
+      url.searchParams.delete('num');
+      window.location.replace(url.toString());
+      return;
+    }
+
+    chrome.storage.local.remove(['strictLocalFilter', 'top100']);
 
     chrome.storage.local.get([
       'activeLocation',
       'locationEnabled',
       'languageLock',
       'recentCodes',
-      'favoriteCodes',
-      'top100'
+      'favoriteCodes'
     ], function (res) {
       if (res.languageLock !== undefined) languageLock = res.languageLock;
       if (res.locationEnabled !== undefined) locationEnabled = res.locationEnabled;
-      if (res.top100 !== undefined) isTop100 = res.top100;
       if (Array.isArray(res.recentCodes) && res.recentCodes.length > 0) recentCodes = res.recentCodes;
       if (Array.isArray(res.favoriteCodes) && res.favoriteCodes.length > 0) favoriteCodes = res.favoriteCodes;
 
@@ -78,9 +81,9 @@
       if (locationEnabled && url.pathname === '/search' && url.searchParams.has('q')) {
         const currentGl = url.searchParams.get('gl');
         const currentHl = url.searchParams.get('hl');
-        const currentNum = url.searchParams.get('num');
         const targetCode = activeLocation.code.toLowerCase();
 
+        const hasNum = url.searchParams.has('num');
         const hasUule = url.searchParams.has('uule');
         const hasPws = url.searchParams.has('pws');
         const hasCr = url.searchParams.has('cr');
@@ -89,9 +92,8 @@
 
         const glMismatched = !currentGl || currentGl.toLowerCase() !== targetCode;
         const hlMismatched = languageLock && currentHl !== 'en';
-        const numMismatched = isTop100 && currentNum !== '100';
 
-        if (glMismatched || hlMismatched || numMismatched || hasUule || hasPws || hasCr || hasContextSource || hasDoubleAmp) {
+        if (glMismatched || hlMismatched || hasNum || hasUule || hasPws || hasCr || hasContextSource || hasDoubleAmp) {
           applyLocation(activeLocation);
           return;
         }
@@ -235,9 +237,6 @@
           <button type="button" class="lg-tool-btn" id="lg-btn-open-extractor" title="Extract all organic ranking URLs to CSV">
             <span>📥 Export CSV</span>
           </button>
-          <button type="button" class="lg-tool-btn ${isTop100 ? 'active' : ''}" id="lg-btn-toggle-top100" title="Toggle 100 Search Results per Page">
-            <span>⚡ 100 Results</span>
-          </button>
           <label class="lg-toggle-item" title="Forces Google UI to stay in English (hl=en)">
             <input type="checkbox" class="lg-mini-checkbox" id="lg-toggle-lang" ${languageLock ? 'checked' : ''}>
             <span>English UI</span>
@@ -328,7 +327,6 @@
     const listContainer = wrapper.querySelector('#lg-list-container');
     const toggleLang = wrapper.querySelector('#lg-toggle-lang');
     const resetBtn = wrapper.querySelector('#lg-btn-reset-home');
-    const top100Btn = wrapper.querySelector('#lg-btn-toggle-top100');
     const extractorBtn = wrapper.querySelector('#lg-btn-open-extractor');
     const compareBtn = wrapper.querySelector('#lg-btn-open-compare');
 
@@ -351,28 +349,11 @@
             url.searchParams.delete('uule');
             url.searchParams.delete('cr');
             url.searchParams.delete('pws');
-            if (url.searchParams.get('num') === '100') url.searchParams.delete('num');
+            url.searchParams.delete('num');
             window.location.href = url.toString();
           } else {
             applyLocation(activeLocation);
           }
-        });
-      });
-    }
-
-    // Toggle 100 Results button
-    if (top100Btn) {
-      top100Btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        isTop100 = !isTop100;
-        chrome.storage.local.set({ top100: isTop100 }, function () {
-          const url = new URL(window.location.href);
-          if (isTop100) {
-            url.searchParams.set('num', '100');
-          } else {
-            url.searchParams.delete('num');
-          }
-          window.location.href = url.toString();
         });
       });
     }
@@ -615,16 +596,8 @@
           hlInput.value = 'en';
         }
 
-        if (isTop100) {
-          let numInput = form.querySelector('input[name="num"]');
-          if (!numInput) {
-            numInput = document.createElement('input');
-            numInput.type = 'hidden';
-            numInput.name = 'num';
-            form.appendChild(numInput);
-          }
-          numInput.value = '100';
-        }
+        const num = form.querySelector('input[name="num"]');
+        if (num) num.remove();
       } else {
         const gl = form.querySelector('input[name="gl"]');
         if (gl) gl.remove();
@@ -632,7 +605,7 @@
         if (num) num.remove();
       }
 
-      const badInputs = form.querySelectorAll('input[name="uule"], input[name="pws"], input[name="cr"]');
+      const badInputs = form.querySelectorAll('input[name="uule"], input[name="pws"], input[name="cr"], input[name="num"]');
       badInputs.forEach(function (el) { el.remove(); });
     });
   }
@@ -669,10 +642,8 @@
         currentUrl.searchParams.set('hl', nativeLang);
       }
 
-      if (isTop100) {
-        currentUrl.searchParams.set('num', '100');
-      }
-
+      // Purge all anti-bot, scraper, and deprecated parameters that trigger Google 403 Forbidden
+      currentUrl.searchParams.delete('num');
       currentUrl.searchParams.delete('cr');
       currentUrl.searchParams.delete('uule');
       currentUrl.searchParams.delete('pws');

@@ -13,7 +13,6 @@
    - Displays active country: `[ 🇺🇸 United States ▾ ]` with instant country picker.
    - Quick-switch favorite chips: `[ 🇬🇧 UK ] [ 🇨🇦 CA ] [ 🇦🇺 AU ]` for 1-tap switching.
    - **`[ 🔄 Reset to Home ]`**: 1-click button to instantly disable spoofing and restore your real physical location.
-   - **`[ ⚡ Top 100 ]`**: 1-tap switch to display 100 results per page (`num=100`) without opening Google Search settings.
 
 2. **Organic Ranking Badges (`#1`, `#2`, `#3...`):**
    - Automatically tags every organic search result with its exact position number right beside the title.
