@@ -38,7 +38,6 @@
   function init() {
     loadSettings(function () {
       injectBadgeUnderCamera();
-      hookSearchForms();
       setupMutationObserver();
       setupKeyboardShortcuts();
       window.addEventListener('resize', alignWithCamera);
@@ -569,50 +568,7 @@
     });
   }
 
-  function hookSearchForms() {
-    if (!activeLocation) return;
-    const targetCode = activeLocation.code.toLowerCase();
 
-    const forms = document.querySelectorAll('form[action*="/search"], form[role="search"], form#tsf');
-    forms.forEach(function (form) {
-      if (locationEnabled) {
-        let glInput = form.querySelector('input[name="gl"]');
-        if (!glInput) {
-          glInput = document.createElement('input');
-          glInput.type = 'hidden';
-          glInput.name = 'gl';
-          form.appendChild(glInput);
-        }
-        glInput.value = targetCode;
-
-        if (languageLock) {
-          let hlInput = form.querySelector('input[name="hl"]');
-          if (!hlInput) {
-            hlInput = document.createElement('input');
-            hlInput.type = 'hidden';
-            hlInput.name = 'hl';
-            form.appendChild(hlInput);
-          }
-          hlInput.value = 'en';
-        }
-
-        const num = form.querySelector('input[name="num"]');
-        if (num) num.remove();
-      } else {
-        const gl = form.querySelector('input[name="gl"]');
-        if (gl) gl.remove();
-        const num = form.querySelector('input[name="num"]');
-        if (num) num.remove();
-      }
-
-      const badInputs = form.querySelectorAll('input[name="uule"], input[name="pws"], input[name="cr"], input[name="num"]');
-      badInputs.forEach(function (el) { el.remove(); });
-    });
-  }
-
-  document.addEventListener('submit', function () {
-    hookSearchForms();
-  }, true);
 
   function applyLocation(locationObj) {
     if (!locationObj) return;
@@ -973,15 +929,12 @@
         alignWithCamera();
       }
 
-      hookSearchForms();
-
       if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
         loadSettings(function () {
           const wrapper = document.getElementById('location-gear-wrapper');
           if (wrapper) renderBadgeHTML(wrapper);
           alignWithCamera();
-          hookSearchForms();
         });
       }
     });
