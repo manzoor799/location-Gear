@@ -20,6 +20,7 @@
 
   const data = window.LocationGearData || {};
   const COUNTRIES = data.COUNTRIES || [];
+  const LANGUAGE_MARKETS = data.LANGUAGE_MARKETS || {};
   const findCountry = data.findCountry || function () { return null; };
   const getTimezone = data.getTimezone || function () { return 'UTC'; };
   const getNativeLanguage = data.getNativeLanguage || function () { return 'en'; };
@@ -31,6 +32,7 @@
   let favoriteCodes = ['US', 'GB', 'CA', 'AU', 'DE'];
   let recentCodes = ['US', 'CA', 'GB', 'FR'];
   let activeTierFilter = 'all';
+  let activeQuickLanguage = 'all';
   let searchQuery = '';
   let isDropdownOpen = false;
   let selectedIndex = -1;
@@ -166,16 +168,18 @@
     }
   }
 
-  function renderBadgeHTML(wrapper) {
-    const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1, lat: 37.0902, lng: -95.7129 };
-
-    let quickPillsHtml = '';
-    const topMarkets = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN', 'ES', 'IT'];
-    topMarkets.forEach(function (code) {
+  function getQuickChipsHtml(langKey, currentLoc, isEnabled) {
+    const loc = currentLoc || { code: 'US' };
+    let codes = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN', 'ES', 'IT'];
+    if (langKey && langKey !== 'all' && LANGUAGE_MARKETS[langKey]) {
+      codes = LANGUAGE_MARKETS[langKey].codes || [];
+    }
+    let html = '';
+    codes.forEach(function (code) {
       const c = findCountry(code);
       if (c) {
-        const isSelected = locationEnabled && c.code === loc.code;
-        quickPillsHtml += `
+        const isSelected = isEnabled && c.code === loc.code;
+        html += `
           <button type="button" class="lg-quick-chip ${isSelected ? 'active' : ''}" data-code="${c.code}" title="Switch to ${c.name}">
             <span>${c.flag}</span>
             <span>${c.code}</span>
@@ -183,6 +187,11 @@
         `;
       }
     });
+    return html;
+  }
+
+  function renderBadgeHTML(wrapper) {
+    const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1, lat: 37.0902, lng: -95.7129 };
 
     wrapper.innerHTML = `
       <!-- Compact Badge directly under Camera Icon -->
@@ -211,9 +220,19 @@
 
         <!-- 1-Tap Quick Switch Markets -->
         <div class="lg-quick-section">
-          <span class="lg-section-label">⚡ 1-Tap Quick Switch</span>
-          <div class="lg-quick-chips">
-            ${quickPillsHtml}
+          <div class="lg-quick-header">
+            <span class="lg-section-label">⚡ 1-Tap Quick Switch</span>
+            <div class="lg-lang-chips-bar" id="lg-lang-chips-bar">
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'all' ? 'active' : ''}" data-lang="all" title="Top Global Markets">Top</button>
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'es' ? 'active' : ''}" data-lang="es" title="Spanish: MX, ES, CO, AR, PE, CL">🇪🇸 ES</button>
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'de' ? 'active' : ''}" data-lang="de" title="German: DE, AT, CH">🇩🇪 DE</button>
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'fr' ? 'active' : ''}" data-lang="fr" title="French: FR, CA, BE, CH, CI, CM">🇫🇷 FR</button>
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'pt' ? 'active' : ''}" data-lang="pt" title="Portuguese: BR, PT, AO, MZ">🇵🇹 PT</button>
+              <button type="button" class="lg-lang-pill ${activeQuickLanguage === 'it' ? 'active' : ''}" data-lang="it" title="Italian: IT, CH">🇮🇹 IT</button>
+            </div>
+          </div>
+          <div class="lg-quick-chips" id="lg-quick-chips">
+            ${getQuickChipsHtml(activeQuickLanguage, loc, locationEnabled)}
           </div>
         </div>
 
@@ -419,6 +438,25 @@
           } else if (items.length > 0) {
             items[0].click();
           }
+        }
+      });
+    }
+
+    // Language Tabs switcher for quick chips
+    const langBar = wrapper.querySelector('#lg-lang-chips-bar');
+    if (langBar) {
+      langBar.addEventListener('click', function (e) {
+        const pill = e.target.closest('.lg-lang-pill');
+        if (!pill) return;
+        e.stopPropagation();
+        const lang = pill.getAttribute('data-lang') || 'all';
+        activeQuickLanguage = lang;
+        langBar.querySelectorAll('.lg-lang-pill').forEach(function (p) {
+          p.classList.toggle('active', p === pill);
+        });
+        const quickChipsContainer = wrapper.querySelector('#lg-quick-chips');
+        if (quickChipsContainer) {
+          quickChipsContainer.innerHTML = getQuickChipsHtml(activeQuickLanguage, activeLocation, locationEnabled);
         }
       });
     }

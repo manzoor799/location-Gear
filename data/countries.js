@@ -2209,6 +2209,45 @@
     },
   ];
 
+  // Language-based High-Value Markets
+  const LANGUAGE_MARKETS = {
+    es: {
+      id: 'es',
+      name: 'Spanish',
+      flag: '🇪🇸',
+      label: 'Spanish (6)',
+      codes: ['MX', 'ES', 'CO', 'AR', 'PE', 'CL']
+    },
+    de: {
+      id: 'de',
+      name: 'German',
+      flag: '🇩🇪',
+      label: 'German (3)',
+      codes: ['DE', 'AT', 'CH']
+    },
+    fr: {
+      id: 'fr',
+      name: 'French',
+      flag: '🇫🇷',
+      label: 'French (6)',
+      codes: ['FR', 'CA', 'BE', 'CH', 'CI', 'CM']
+    },
+    pt: {
+      id: 'pt',
+      name: 'Portuguese',
+      flag: '🇵🇹',
+      label: 'Portuguese (4)',
+      codes: ['BR', 'PT', 'AO', 'MZ']
+    },
+    it: {
+      id: 'it',
+      name: 'Italian',
+      flag: '🇮🇹',
+      label: 'Italian (2)',
+      codes: ['IT', 'CH']
+    }
+  };
+
   // Helper search function
   function findCountry(codeOrName) {
     if (!codeOrName) return null;
@@ -2218,7 +2257,6 @@
 
   // Quick favorite / top countries for instant switcher bar pills
   const DEFAULT_QUICK_PILLS = ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN'];
-
 
   // Timezone and Native Language mappings for spoofing and language control
   const COUNTRY_TIMEZONES = {
@@ -2235,7 +2273,8 @@
     CL: 'America/Santiago', CO: 'America/Bogota', QA: 'Asia/Qatar', KW: 'Asia/Kuwait',
     IN: 'Asia/Kolkata', PK: 'Asia/Karachi', ID: 'Asia/Jakarta', PH: 'Asia/Manila',
     VN: 'Asia/Ho_Chi_Minh', BD: 'Asia/Dhaka', EG: 'Africa/Cairo', NG: 'Africa/Lagos',
-    KE: 'Africa/Nairobi', MA: 'Africa/Casablanca', UA: 'Europe/Kyiv', KZ: 'Asia/Almaty'
+    KE: 'Africa/Nairobi', MA: 'Africa/Casablanca', UA: 'Europe/Kyiv', KZ: 'Asia/Almaty',
+    CI: 'Africa/Abidjan', CM: 'Africa/Douala', AO: 'Africa/Luanda', MZ: 'Africa/Maputo', SM: 'Europe/San_Marino'
   };
 
   const COUNTRY_LANGUAGES = {
@@ -2248,7 +2287,8 @@
     EG: 'ar', MA: 'ar', DZ: 'ar', TN: 'ar', IQ: 'ar', JO: 'ar',
     IN: 'hi', PK: 'ur', ID: 'id', TH: 'th', VN: 'vi', GR: 'el',
     SE: 'sv', NO: 'no', DK: 'da', FI: 'fi', CZ: 'cs', HU: 'hu',
-    RO: 'ro', BG: 'bg', SK: 'sk', HR: 'hr', RS: 'sr', IL: 'he'
+    RO: 'ro', BG: 'bg', SK: 'sk', HR: 'hr', RS: 'sr', IL: 'he',
+    CI: 'fr', CM: 'fr', AO: 'pt', MZ: 'pt', SM: 'it'
   };
 
   function getTimezone(code) {
@@ -2263,6 +2303,7 @@
 
   return {
     COUNTRIES,
+    LANGUAGE_MARKETS,
     UULE_TABLE,
     generateUule,
     findCountry,

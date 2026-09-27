@@ -341,8 +341,85 @@ input:checked + .slider:before {
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
 }
 
-#popup-search::placeholder {
-  color: #70757a;
+/* Language Market Section */
+.language-section {
+  padding: 2px 16px 6px 16px;
+  flex-shrink: 0;
+}
+
+.language-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.lang-active-indicator {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1a73e8;
+  background: #e8f0fe;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.language-chips {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.language-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.lang-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.lang-chip span {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.lang-chip:hover {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.lang-chip.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3);
+}
+
+.lang-tag {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f1f3f4;
+  color: #5f6368;
+  font-weight: 600;
+  margin-left: 4px;
 }
 
 /* Tier Filter Tabs (Senior 16-Year Designer Segmented Control) */
