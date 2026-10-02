@@ -1,4 +1,4 @@
-# Location Gear 🌍⚙️ (v1.1.0)
+# Location Gear 🌍⚙️ (v1.2.0)
 
 > **The Modern, Zero-Lag SERP & Maps Region Switcher with In-SERP Productivity Tools**  
 > 100% Free, Unlimited Searches, Zero CAPTCHAs, and Zero 403 Errors.  
@@ -6,35 +6,35 @@
 
 ---
 
-## 🎯 Key Features (v1.1.0)
+## 🎯 Key Features (v1.2.0)
 
 1. **Native In-SERP Control Dock (Live Google Search):**
-   - Injected cleanly right below Google's category tabs (`All`, `Images`, `News`).
-   - Displays active country: `[ 🇺🇸 United States ▾ ]` with instant country picker.
-   - Quick-switch favorite chips: `[ 🇬🇧 UK ] [ 🇨🇦 CA ] [ 🇦🇺 AU ]` for 1-tap switching.
-   - **`[ 🔄 Reset to Home ]`**: 1-click button to instantly disable spoofing and restore your real physical location.
+   - Injected cleanly beneath the camera / lens icon in Google's search box.
+   - Displays active country badge: `[ 🇵🇪 PE ▾ ]` with instant dropdown switcher.
+   - Quick-switch favorite chips: `[ 🇺🇸 US ] [ 🇬🇧 GB ] [ 🇨🇦 CA ] [ 🇦🇺 AU ] [ 🇩🇪 DE ]` for 1-tap switching.
+   - **`[ ↺ Reset ]`**: Clean, neutral 1-click button to restore your real physical location without alarming alert styles.
 
-2. **Organic Ranking Badges (`#1`, `#2`, `#3...`):**
-   - Automatically tags every organic search result with its exact position number right beside the title.
-   - Saves time counting links during SEO audits.
+2. **⭐ Customizable Favorites Pinning:**
+   - Star/unstar any of the 196 countries in the popup list with a single click.
+   - Pinned favorites immediately populate the Quick Select bar in both the popup and In-SERP dock.
+   - Stars stay hidden until hover to maintain a calm, unpolluted view.
 
-3. **1-Click SERP Extractor (CSV & Clipboard):**
-   - Instant harvester modal extracting Rank, Page Title, Domain, and Target URL.
-   - `[ 📋 Copy All URLs to Clipboard ]` for pasting directly into spreadsheets.
-   - `[ 📥 Download Full CSV ]` for client deliverables.
+3. **🕒 Live Target Market Local Time Clock:**
+   - Displays real-time local time and timezone (e.g. `10:42 PM GMT-5`) for the target country.
+   - Real-time client-side calculation using native `Intl.DateTimeFormat` and IANA timezone data.
 
-4. **Dual-SERP Split Comparison Mode (50/50 View):**
-   - Side-by-side view comparing two countries simultaneously (e.g. US vs UK).
-   - Synced scrolling between both panes to easily spot ranking differences.
+4. **🌐 High-Value Language Market Filters:**
+   - Instant filtering for major global language clusters: Spanish (6), German (3), French (6), Portuguese (4), Italian (2).
+   - Preserves exact market economic priority order.
 
-5. **Toolbar Status Badge & Master Reset Switch:**
-   - Chrome toolbar icon displays the live country code (`US`, `UK`) in green, or `OFF` in grey.
-   - Prominent **"Turn Off / Back to Real Location"** button in popup for effortless switching.
+5. **1-Click SERP Extractor & Dual-SERP Comparison:**
+   - Instant harvester modal extracting Rank, Title, Domain, and URL to CSV or Clipboard.
+   - Side-by-side 50/50 dual view comparing rankings between two countries simultaneously with synced scrolling.
 
 6. **Bulletproof Zero-Lag Engine (0 CAPTCHAs, 0 403 Forbidden):**
-   - Uses Google's official, sanctioned `gl` regional parameter.
-   - Purges scraper tokens (`uule`, `pws`, `cr`) that trigger Google Botguard security checkpoints.
-   - Keeps Google navigation in English (`hl=en`) to avoid foreign language confusion.
+   - Uses Google's official, sanctioned `gl` regional parameter and `hl=en` English lock.
+   - Purges scraper tokens (`uule`, `pws`, `cr`, `num`) that trigger Google Botguard security checkpoints.
+   - 100% local client-side execution with zero external network requests or tracking.
 
 ---
 
@@ -95,9 +95,7 @@ Location Gear/
 ├── data/
 │   └── countries.js        # 196 countries dataset with Tiers, coords & UULE generator
 ├── scripts/
-│   ├── inject-loader.js    # Content script running at document_start
-│   ├── inject-main.js      # Main-world script mocking navigator.geolocation
-│   └── content.js          # In-page UI below search bar & SERP redirection engine
+│   └── content.js          # In-page UI dock & SERP redirection engine
 ├── styles/
 │   └── content.css         # Google-native styling (Light & Dark theme support)
 ├── popup/

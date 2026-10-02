@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const activeCard = document.getElementById('active-card');
   const statusLabel = document.getElementById('status-label');
   const spoofToggle = document.getElementById('spoof-toggle');
-  const masterResetBtn = document.getElementById('master-reset-btn');
-  const masterBtnText = document.getElementById('master-btn-text');
   const favoriteChipsEl = document.getElementById('favorite-chips');
   const languageChipsEl = document.getElementById('language-chips');
   const langActiveIndicator = document.getElementById('lang-active-indicator');
@@ -94,23 +92,11 @@ document.addEventListener('DOMContentLoaded', function () {
       statusLabel.className = 'status-label';
       activeCard.classList.remove('disabled');
       spoofToggle.checked = true;
-
-      if (masterResetBtn) {
-        masterResetBtn.className = 'btn-master-reset-compact';
-        if (masterBtnText) masterBtnText.textContent = 'Turn Off';
-        masterResetBtn.title = 'Turn off spoofing and restore real physical location';
-      }
     } else {
       statusLabel.textContent = 'DISABLED';
       statusLabel.className = 'status-label disabled';
       activeCard.classList.add('disabled');
       spoofToggle.checked = false;
-
-      if (masterResetBtn) {
-        masterResetBtn.className = 'btn-master-reset-compact inactive';
-        if (masterBtnText) masterBtnText.textContent = 'Turn On';
-        masterResetBtn.title = 'Turn on location spoofing';
-      }
     }
 
     // 2. Active Card Info
@@ -238,16 +224,6 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
     });
     listEl.innerHTML = html;
-  }
-
-  // Master Reset / Toggle button click (if present)
-  if (masterResetBtn) {
-    masterResetBtn.addEventListener('click', function () {
-      locationEnabled = !locationEnabled;
-      chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
-        updateUI();
-      });
-    });
   }
 
   // Switch toggle

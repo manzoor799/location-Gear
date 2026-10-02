@@ -43,7 +43,18 @@
       setupMutationObserver();
       setupKeyboardShortcuts();
       setupStorageListener();
+      setupOutsideClickHandler();
       window.addEventListener('resize', alignWithCamera);
+    });
+  }
+
+  function setupOutsideClickHandler() {
+    document.addEventListener('click', function (e) {
+      if (!isDropdownOpen) return;
+      const wrapper = document.getElementById('location-gear-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeDropdown();
+      }
     });
   }
 
@@ -476,13 +487,6 @@
         chrome.storage.local.set({ languageLock: languageLock });
       });
     }
-
-    // Close on outside click
-    document.addEventListener('click', function (e) {
-      if (isDropdownOpen && !wrapper.contains(e.target)) {
-        closeDropdown();
-      }
-    });
 
     // Search input: completely isolated so Google never steals focus or opens suggestions
     if (searchInput) {
