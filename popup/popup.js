@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const activeFlag = document.getElementById('active-flag');
   const activeName = document.getElementById('active-name');
   const activeCoords = document.getElementById('active-coords');
+  const activeTime = document.getElementById('active-time');
   const activeTier = document.getElementById('active-tier');
   const activeCard = document.getElementById('active-card');
   const statusLabel = document.getElementById('status-label');
@@ -32,6 +33,23 @@ document.addEventListener('DOMContentLoaded', function () {
   const listEl = document.getElementById('popup-country-list');
   const openGoogleBtn = document.getElementById('open-google-btn');
   const toggleLangLock = document.getElementById('toggle-langlock');
+
+  // Format current local time for target country
+  function formatLocalTime(code) {
+    try {
+      const tz = data.getTimezone ? data.getTimezone(code) : 'UTC';
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      });
+      return formatter.format(new Date());
+    } catch (e) {
+      return '';
+    }
+  }
 
   // Purge legacy top100 setting to ensure no Google 403 Forbidden blocks
   chrome.storage.local.remove('top100');
@@ -98,6 +116,12 @@ document.addEventListener('DOMContentLoaded', function () {
       activeCoords.textContent = `${activeLocation.lat.toFixed(4)}°, ${activeLocation.lng.toFixed(4)}°`;
       activeTier.textContent = `Tier ${activeLocation.tier}`;
       activeTier.className = `tier-pill t${activeLocation.tier}`;
+
+      if (activeTime) {
+        const timeStr = formatLocalTime(activeLocation.code);
+        activeTime.textContent = timeStr ? `🕒 ${timeStr}` : '';
+        activeTime.style.display = timeStr ? 'inline-flex' : 'none';
+      }
     }
 
     renderFavoriteChips();
@@ -188,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
     filtered.forEach(function (c) {
       const isSelected = locationEnabled && activeLocation && activeLocation.code === c.code;
+      const isFav = favoriteCodes.includes(c.code);
       let langTagHtml = '';
       if (activeLanguageFilter !== 'all' && LANGUAGE_MARKETS[activeLanguageFilter]) {
         const m = LANGUAGE_MARKETS[activeLanguageFilter];
@@ -199,7 +224,12 @@ document.addEventListener('DOMContentLoaded', function () {
             <span class="item-flag">${c.flag}</span>
             <span class="item-name">${c.name} <span class="item-code">(${c.code})</span>${langTagHtml}</span>
           </div>
-          <span class="tier-pill t${c.tier}">T${c.tier}</span>
+          <div class="item-right">
+            <button type="button" class="btn-fav-star ${isFav ? 'starred' : ''}" data-fav="${c.code}" title="${isFav ? 'Pinned to Quick Bar (click to unpin)' : 'Pin to Quick Bar'}">
+              ${isFav ? '★' : '☆'}
+            </button>
+            <span class="tier-pill t${c.tier}">T${c.tier}</span>
+          </div>
         </li>
       `;
     });
@@ -293,8 +323,35 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Country item click
+  // Country item & Star Favorite click
   listEl.addEventListener('click', function (e) {
+    const starBtn = e.target.closest('.btn-fav-star');
+    if (starBtn) {
+      e.stopPropagation();
+      const favCode = starBtn.getAttribute('data-fav');
+      if (!favCode) return;
+
+      const idx = favoriteCodes.indexOf(favCode);
+      if (idx > -1) {
+        // Unpin favorite (maintain at least 1)
+        if (favoriteCodes.length > 1) {
+          favoriteCodes.splice(idx, 1);
+        }
+      } else {
+        // Pin new favorite (keep max 6 pinned on bar)
+        if (favoriteCodes.length >= 6) {
+          favoriteCodes.shift();
+        }
+        favoriteCodes.push(favCode);
+      }
+
+      chrome.storage.local.set({ favoriteCodes: favoriteCodes }, function () {
+        renderFavoriteChips();
+        renderList();
+      });
+      return;
+    }
+
     const item = e.target.closest('.popup-country-item');
     if (!item) return;
 

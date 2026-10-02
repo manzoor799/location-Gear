@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Location Gear - SERP & Maps Region Switcher",
-  "version": "1.1.0",
-  "description": "100% accurate Google SERP & Maps region switcher with Native In-SERP Dock, 1-Click CSV URL Extractor, Dual Split Compare, and Top 100 toggle.",
+  "version": "1.2.0",
+  "description": "100% accurate Google SERP & Maps region switcher with Native In-SERP Dock, Customizable Quick Favorites, Local Time Clocks, and Language Market filters.",
   "permissions": [
     "storage",
     "webNavigation"

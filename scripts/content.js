@@ -42,7 +42,37 @@
       injectBadgeUnderCamera();
       setupMutationObserver();
       setupKeyboardShortcuts();
+      setupStorageListener();
       window.addEventListener('resize', alignWithCamera);
+    });
+  }
+
+  function setupStorageListener() {
+    chrome.storage.onChanged.addListener(function (changes, namespace) {
+      if (namespace !== 'local') return;
+      let needsRerender = false;
+      if (changes.activeLocation && changes.activeLocation.newValue) {
+        activeLocation = changes.activeLocation.newValue;
+        needsRerender = true;
+      }
+      if (changes.locationEnabled !== undefined) {
+        locationEnabled = changes.locationEnabled.newValue;
+        needsRerender = true;
+      }
+      if (changes.favoriteCodes && changes.favoriteCodes.newValue) {
+        favoriteCodes = changes.favoriteCodes.newValue;
+        needsRerender = true;
+      }
+      if (changes.languageLock !== undefined) {
+        languageLock = changes.languageLock.newValue;
+      }
+      if (needsRerender) {
+        const wrapper = document.getElementById('location-gear-wrapper');
+        if (wrapper) {
+          renderBadgeHTML(wrapper);
+          setupEventListeners(wrapper);
+        }
+      }
     });
   }
 
@@ -168,11 +198,30 @@
     }
   }
 
+  function formatLocalTime(code) {
+    try {
+      const tz = getTimezone(code);
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      });
+      return formatter.format(new Date());
+    } catch (e) {
+      return '';
+    }
+  }
+
   function getQuickChipsHtml(langKey, currentLoc, isEnabled) {
     const loc = currentLoc || { code: 'US' };
-    let codes = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN', 'ES', 'IT'];
+    let codes;
     if (langKey && langKey !== 'all' && LANGUAGE_MARKETS[langKey]) {
       codes = LANGUAGE_MARKETS[langKey].codes || [];
+    } else {
+      const topDefaults = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR', 'IN', 'ES', 'IT'];
+      codes = Array.from(new Set([...favoriteCodes, ...topDefaults])).slice(0, 11);
     }
     let html = '';
     codes.forEach(function (code) {
@@ -192,6 +241,7 @@
 
   function renderBadgeHTML(wrapper) {
     const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1, lat: 37.0902, lng: -95.7129 };
+    const localTimeStr = locationEnabled ? formatLocalTime(loc.code) : '';
 
     wrapper.innerHTML = `
       <!-- Compact Badge directly under Camera Icon -->
@@ -211,6 +261,7 @@
             <span class="lg-active-pill ${locationEnabled ? '' : 'disabled'}" id="lg-active-pill">
               ${locationEnabled ? (loc.flag + ' ' + loc.code) : 'OFF'}
             </span>
+            ${localTimeStr ? `<span class="lg-time-pill" title="Local time in ${loc.name}">🕒 ${localTimeStr}</span>` : ''}
           </div>
           <button type="button" class="lg-btn-reset-mini ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="Turn off spoofing and restore your real physical location">
             <span class="lg-btn-icon">⏻</span>

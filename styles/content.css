@@ -152,6 +152,21 @@
   border-color: #dadce0;
 }
 
+.lg-time-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f1f3f4;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  margin-left: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
 .lg-btn-reset-mini {
   display: inline-flex;
   align-items: center;

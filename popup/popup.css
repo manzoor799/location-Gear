@@ -227,10 +227,37 @@ input:checked + .slider:before {
   color: #5f6368;
 }
 
-.active-info p {
-  font-size: 10.5px;
+.active-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-size: 10px;
   color: #5f6368;
-  margin-top: 1px;
+}
+
+.meta-dot {
+  color: #bdc1c6;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.active-time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #1a73e8;
+  background: #e8f0fe;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.active-card.disabled .active-time-pill {
+  color: #70757a;
+  background: #e8eaed;
 }
 
 .tier-pill {
@@ -542,6 +569,38 @@ input:checked + .slider:before {
   font-size: 10.5px;
   color: #70757a;
   margin-left: 2px;
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-fav-star {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 3px;
+  cursor: pointer;
+  color: #dadce0;
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  outline: none;
+}
+
+.popup-country-item:hover .btn-fav-star {
+  color: #9aa0a6;
+}
+
+.btn-fav-star:hover {
+  transform: scale(1.2);
+  color: #f29900 !important;
+}
+
+.btn-fav-star.starred {
+  color: #f29900 !important;
 }
 
 /* Unified Bottom Control & Action Bar (Saves 45px) */
