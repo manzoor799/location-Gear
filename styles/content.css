@@ -126,10 +126,12 @@
   flex-shrink: 0;
 }
 
-.lg-logo-icon {
-  font-size: 15px;
-  line-height: 1;
+.lg-logo-img {
+  width: 17px;
+  height: 17px;
+  display: block;
   flex-shrink: 0;
+  border-radius: 3px;
 }
 
 .lg-logo-text {

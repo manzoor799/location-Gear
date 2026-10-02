@@ -253,6 +253,7 @@
   function renderBadgeHTML(wrapper) {
     const loc = activeLocation || { code: 'US', name: 'United States', flag: '🇺🇸', tier: 1, lat: 37.0902, lng: -95.7129 };
     const localTimeStr = locationEnabled ? formatLocalTime(loc.code) : '';
+    const logoUrl = chrome.runtime.getURL('icons/icon48.png');
 
     wrapper.innerHTML = `
       <!-- Compact Badge directly under Camera Icon -->
@@ -267,7 +268,7 @@
         <!-- Compact Header -->
         <div class="lg-header">
           <div class="lg-header-left">
-            <span class="lg-logo-icon">🌍</span>
+            <img src="${logoUrl}" class="lg-logo-img" alt="Location Gear Logo" width="18" height="18">
             <span class="lg-logo-text">Location Gear</span>
             <span class="lg-active-pill ${locationEnabled ? '' : 'disabled'}" id="lg-active-pill" title="${locationEnabled ? loc.name : 'Spoofing Disabled'}">
               ${locationEnabled ? (loc.flag + ' ' + loc.code) : 'OFF'}
