@@ -95,18 +95,22 @@ document.addEventListener('DOMContentLoaded', function () {
       activeCard.classList.remove('disabled');
       spoofToggle.checked = true;
 
-      masterResetBtn.className = 'btn-master-reset-compact';
-      masterBtnText.textContent = 'Turn Off';
-      masterResetBtn.title = 'Turn off spoofing and restore real physical location';
+      if (masterResetBtn) {
+        masterResetBtn.className = 'btn-master-reset-compact';
+        if (masterBtnText) masterBtnText.textContent = 'Turn Off';
+        masterResetBtn.title = 'Turn off spoofing and restore real physical location';
+      }
     } else {
       statusLabel.textContent = 'DISABLED';
       statusLabel.className = 'status-label disabled';
       activeCard.classList.add('disabled');
       spoofToggle.checked = false;
 
-      masterResetBtn.className = 'btn-master-reset-compact inactive';
-      masterBtnText.textContent = 'Turn On';
-      masterResetBtn.title = 'Turn on location spoofing';
+      if (masterResetBtn) {
+        masterResetBtn.className = 'btn-master-reset-compact inactive';
+        if (masterBtnText) masterBtnText.textContent = 'Turn On';
+        masterResetBtn.title = 'Turn on location spoofing';
+      }
     }
 
     // 2. Active Card Info
@@ -236,13 +240,15 @@ document.addEventListener('DOMContentLoaded', function () {
     listEl.innerHTML = html;
   }
 
-  // Master Reset / Toggle button click
-  masterResetBtn.addEventListener('click', function () {
-    locationEnabled = !locationEnabled;
-    chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
-      updateUI();
+  // Master Reset / Toggle button click (if present)
+  if (masterResetBtn) {
+    masterResetBtn.addEventListener('click', function () {
+      locationEnabled = !locationEnabled;
+      chrome.storage.local.set({ locationEnabled: locationEnabled }, function () {
+        updateUI();
+      });
     });
-  });
+  }
 
   // Switch toggle
   spoofToggle.addEventListener('change', function () {

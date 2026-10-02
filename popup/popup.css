@@ -584,22 +584,26 @@ input:checked + .slider:before {
   line-height: 1;
   padding: 2px 3px;
   cursor: pointer;
-  color: #dadce0;
-  transition: all 0.15s ease;
+  color: #bdc1c6;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   border-radius: 4px;
   outline: none;
+  opacity: 0;
 }
 
 .popup-country-item:hover .btn-fav-star {
+  opacity: 1;
   color: #9aa0a6;
 }
 
 .btn-fav-star:hover {
   transform: scale(1.2);
   color: #f29900 !important;
+  opacity: 1 !important;
 }
 
 .btn-fav-star.starred {
+  opacity: 1 !important;
   color: #f29900 !important;
 }
 

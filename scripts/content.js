@@ -255,18 +255,20 @@
       <div id="location-gear-dropdown">
         <!-- Compact Header -->
         <div class="lg-header">
-          <div class="lg-logo">
+          <div class="lg-header-left">
             <span class="lg-logo-icon">🌍</span>
             <span class="lg-logo-text">Location Gear</span>
-            <span class="lg-active-pill ${locationEnabled ? '' : 'disabled'}" id="lg-active-pill">
+            <span class="lg-active-pill ${locationEnabled ? '' : 'disabled'}" id="lg-active-pill" title="${locationEnabled ? loc.name : 'Spoofing Disabled'}">
               ${locationEnabled ? (loc.flag + ' ' + loc.code) : 'OFF'}
             </span>
-            ${localTimeStr ? `<span class="lg-time-pill" title="Local time in ${loc.name}">🕒 ${localTimeStr}</span>` : ''}
           </div>
-          <button type="button" class="lg-btn-reset-mini ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="Turn off spoofing and restore your real physical location">
-            <span class="lg-btn-icon">⏻</span>
-            <span>${locationEnabled ? 'Reset to Real' : 'Turn On'}</span>
-          </button>
+          <div class="lg-header-right">
+            ${localTimeStr ? `<span class="lg-time-pill" title="Local time in ${loc.name}">🕒 ${localTimeStr}</span>` : ''}
+            <button type="button" class="lg-btn-reset-mini ${!locationEnabled ? 'inactive' : ''}" id="lg-btn-reset-home" title="${locationEnabled ? 'Turn off spoofing and restore your real physical location' : 'Turn on location spoofing'}">
+              <span class="lg-btn-icon">↺</span>
+              <span>${locationEnabled ? 'Reset' : 'Turn On'}</span>
+            </button>
+          </div>
         </div>
 
         <!-- 1-Tap Quick Switch Markets -->

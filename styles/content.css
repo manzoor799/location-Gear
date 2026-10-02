@@ -111,28 +111,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: #f8f9fa;
   border-bottom: 1px solid #e8eaed;
   flex-shrink: 0;
+  gap: 8px;
 }
 
-.lg-logo {
+.lg-header-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .lg-logo-icon {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .lg-logo-text {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #1a73e8;
   letter-spacing: -0.2px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .lg-active-pill {
@@ -144,6 +150,11 @@
   color: #1a73e8;
   border: 1px solid #d2e3fc;
   margin-left: 2px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .lg-active-pill.disabled {
@@ -152,44 +163,58 @@
   border-color: #dadce0;
 }
 
+.lg-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .lg-time-pill {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 8px;
-  background: #f1f3f4;
-  color: #3c4043;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #5f6368;
   border: 1px solid #dadce0;
-  margin-left: 3px;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .lg-btn-reset-mini {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
-  border: none;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid #dadce0;
   border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 600;
   cursor: pointer;
-  background: #ea4335;
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(234, 67, 53, 0.25);
+  background: #ffffff;
+  color: #3c4043;
   transition: all 0.15s ease;
   font-family: inherit;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .lg-btn-reset-mini:hover {
-  background: #d93025;
+  background: #f1f3f4;
+  color: #202124;
+  border-color: #bdc1c6;
 }
 
 .lg-btn-reset-mini.inactive {
   background: #188038;
+  border-color: #188038;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(24, 128, 56, 0.2);
 }
 
 .lg-btn-reset-mini.inactive:hover {
