@@ -77,16 +77,18 @@ document.addEventListener('DOMContentLoaded', function () {
       activeCard.classList.remove('disabled');
       spoofToggle.checked = true;
 
-      masterResetBtn.className = 'btn-master-reset';
-      masterBtnText.textContent = 'Turn Off / Back to Real Location';
+      masterResetBtn.className = 'btn-master-reset-compact';
+      masterBtnText.textContent = 'Turn Off';
+      masterResetBtn.title = 'Turn off spoofing and restore real physical location';
     } else {
       statusLabel.textContent = 'DISABLED';
       statusLabel.className = 'status-label disabled';
       activeCard.classList.add('disabled');
       spoofToggle.checked = false;
 
-      masterResetBtn.className = 'btn-master-reset inactive';
-      masterBtnText.textContent = '✓ Turn On Location Spoofing';
+      masterResetBtn.className = 'btn-master-reset-compact inactive';
+      masterBtnText.textContent = 'Turn On';
+      masterResetBtn.title = 'Turn on location spoofing';
     }
 
     // 2. Active Card Info

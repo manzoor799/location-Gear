@@ -341,6 +341,7 @@
 
   function setupEventListeners(wrapper) {
     const badge = wrapper.querySelector('#location-gear-badge');
+    const dropdown = wrapper.querySelector('#location-gear-dropdown');
     const searchInput = wrapper.querySelector('#lg-search-input');
     const listContainer = wrapper.querySelector('#lg-list-container');
     const toggleLang = wrapper.querySelector('#lg-toggle-lang');
@@ -348,11 +349,31 @@
     const extractorBtn = wrapper.querySelector('#lg-btn-open-extractor');
     const compareBtn = wrapper.querySelector('#lg-btn-open-compare');
 
-    // Badge click
-    badge.addEventListener('click', function (e) {
-      e.stopPropagation();
-      toggleDropdown();
+    // 1. ISOLATE ENTIRE WRAPPER & DROPDOWN FROM GOOGLE'S SEARCH BOX (div.RNNXgb)
+    // Prevents any mouse or pointer click inside Location Gear from bubbling up to Google's container
+    ['pointerdown', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend'].forEach(function (evt) {
+      wrapper.addEventListener(evt, function (e) {
+        e.stopPropagation();
+      });
     });
+
+    wrapper.addEventListener('focusin', function (e) {
+      e.stopPropagation();
+    });
+
+    // 2. Badge click & pointer events
+    if (badge) {
+      ['pointerdown', 'mousedown'].forEach(function (evt) {
+        badge.addEventListener(evt, function (e) {
+          e.stopPropagation();
+        });
+      });
+
+      badge.addEventListener('click', function (e) {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+    }
 
     // Reset to Real Location button
     if (resetBtn) {
@@ -396,7 +417,8 @@
 
     // Language Lock toggle
     if (toggleLang) {
-      toggleLang.addEventListener('change', function () {
+      toggleLang.addEventListener('change', function (e) {
+        e.stopPropagation();
         languageLock = toggleLang.checked;
         chrome.storage.local.set({ languageLock: languageLock });
       });
@@ -409,9 +431,25 @@
       }
     });
 
-    // Search input
+    // Search input: completely isolated so Google never steals focus or opens suggestions
     if (searchInput) {
+      ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(function (evt) {
+        searchInput.addEventListener(evt, function (e) {
+          e.stopPropagation();
+        });
+      });
+
+      searchInput.addEventListener('focus', function (e) {
+        e.stopPropagation();
+        // Dismiss Google's search box focus if it active
+        const googleInput = document.querySelector('textarea.gLFyf, input.gLFyf, textarea[name="q"], input[name="q"]');
+        if (googleInput && document.activeElement === googleInput) {
+          googleInput.blur();
+        }
+      });
+
       searchInput.addEventListener('input', function (e) {
+        e.stopPropagation();
         searchQuery = e.target.value;
         if (listContainer) {
           listContainer.style.display = searchQuery.trim().length > 0 ? 'block' : 'none';
@@ -420,6 +458,7 @@
       });
 
       searchInput.addEventListener('keydown', function (e) {
+        e.stopPropagation();
         const items = wrapper.querySelectorAll('.lg-country-item, .lg-custom-location-item');
         if (!items || items.length === 0) return;
 
@@ -439,6 +478,13 @@
             items[0].click();
           }
         }
+      });
+
+      searchInput.addEventListener('keyup', function (e) {
+        e.stopPropagation();
+      });
+      searchInput.addEventListener('keypress', function (e) {
+        e.stopPropagation();
       });
     }
 
@@ -551,11 +597,17 @@
     dropdown.classList.toggle('visible', isDropdownOpen);
     badge.classList.toggle('open', isDropdownOpen);
 
-    if (isDropdownOpen && searchInput) {
-      setTimeout(function () {
-        searchInput.focus();
-        searchInput.select();
-      }, 40);
+    if (isDropdownOpen) {
+      // Dismiss Google search box focus and any autocomplete suggestions
+      const googleInput = document.querySelector('textarea.gLFyf, input.gLFyf, textarea[name="q"], input[name="q"]');
+      if (googleInput) {
+        googleInput.blur();
+      }
+      if (searchInput) {
+        setTimeout(function () {
+          searchInput.focus();
+        }, 50);
+      }
     }
   }
 
